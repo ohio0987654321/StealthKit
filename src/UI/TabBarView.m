@@ -82,22 +82,60 @@
     }
 }
 
+- (void)removeManuallyAddedSublayers {
+    // CRITICAL FIX: Only remove sublayers we explicitly added for styling
+    // This preserves system-managed layers that handle button visibility and functionality
+    
+    if (!self.layer.sublayers) return;
+    
+    NSMutableArray *layersToRemove = [NSMutableArray array];
+    
+    for (CALayer *sublayer in self.layer.sublayers) {
+        // Only remove layers we can identify as manually added for styling
+        // System layers typically don't have custom names or specific properties
+        
+        // Remove shadow layers (we'll recreate them if needed)
+        if (sublayer.shadowOpacity > 0) {
+            [layersToRemove addObject:sublayer];
+        }
+        
+        // Remove layers with custom background colors that aren't clear
+        // (but preserve the main layer background)
+        if (sublayer != self.layer && 
+            sublayer.backgroundColor && 
+            !CGColorEqualToColor(sublayer.backgroundColor, [NSColor clearColor].CGColor)) {
+            [layersToRemove addObject:sublayer];
+        }
+        
+        // Remove layers with border styling that we might have added
+        if (sublayer.borderWidth > 0 && sublayer != self.layer) {
+            [layersToRemove addObject:sublayer];
+        }
+    }
+    
+    // Remove identified layers
+    for (CALayer *layer in layersToRemove) {
+        [layer removeFromSuperlayer];
+    }
+    
+    NSLog(@"TabButton: Removed %lu manually added sublayers", (unsigned long)layersToRemove.count);
+}
+
 - (void)updateAppearanceForSelected:(BOOL)selected {
     UIManager *uiManager = [UIManager sharedManager];
     
     self.wantsLayer = YES;
     
-    // Clear any existing sublayers
-    for (CALayer *sublayer in [self.layer.sublayers copy]) {
-        [sublayer removeFromSuperlayer];
-    }
+    // CRITICAL FIX: Only remove specific layers we manage, not all sublayers
+    // This prevents removal of system-managed layers that handle button visibility
+    [self removeManuallyAddedSublayers];
     
     NSColor *textColor;
     NSFont *font;
     
     if (selected) {
         // Active tab styling - clearly visible like Safari
-        self.layer.backgroundColor = [NSColor.whiteColor colorWithAlphaComponent:0.9].CGColor;
+        // self.layer.backgroundColor = [NSColor.whiteColor colorWithAlphaComponent:0.9].CGColor;
         self.layer.cornerRadius = 6.0;
         self.layer.borderWidth = 1.0;
         self.layer.borderColor = [NSColor.separatorColor colorWithAlphaComponent:0.3].CGColor;
@@ -145,6 +183,9 @@
 @property (nonatomic, strong) NSScrollView *tabScrollView;
 @property (nonatomic, strong) NSStackView *tabStackView;
 @property (nonatomic, strong) NSMutableArray<TabButton *> *tabButtons;
+// DEBUGGING: Track selection changes to detect rapid switching
+@property (nonatomic, strong) NSTimer *selectionDebounceTimer;
+@property (nonatomic, weak) Tab *pendingSelectedTab;
 @end
 
 @implementation TabBarView
@@ -284,6 +325,14 @@
 }
 
 - (void)distributeTabWidthsEvenly {
+    // THREAD SAFETY: Ensure this always runs on main thread
+    if (![NSThread isMainThread]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self distributeTabWidthsEvenly];
+        });
+        return;
+    }
+    
     NSInteger tabCount = self.tabButtons.count;
     if (tabCount == 0) return;
     
@@ -326,30 +375,147 @@
     // CRITICAL FIX: Ensure tab width is never too small to be visible
     tabWidth = MAX(tabWidth, guaranteedMinWidth);
     
+    // CONSTRAINT SAFETY: Validate calculated width is reasonable
+    if (tabWidth <= 0 || tabWidth > 1000.0) {
+        NSLog(@"TabBarView: WARNING - Invalid tab width calculated: %.1f, using safe fallback", tabWidth);
+        tabWidth = guaranteedMinWidth;
+    }
+    
     NSLog(@"TabBarView: Calculated tab width: %.1f for %ld tabs (available: %.1f)", tabWidth, tabCount, availableWidth);
     
+    // CONSTRAINT MANAGEMENT: Batch constraint updates to prevent conflicts
+    [NSAnimationContext beginGrouping];
+    [[NSAnimationContext currentContext] setDuration:0]; // No animation for constraint changes
+    
     for (TabButton *tabButton in self.tabButtons) {
-        // Remove old width constraint if it exists
-        if (tabButton.widthConstraint) {
-            tabButton.widthConstraint.active = NO;
-        }
+        // IMPROVED CONSTRAINT HANDLING: Only update if width actually changed
+        CGFloat currentConstraintWidth = tabButton.widthConstraint ? tabButton.widthConstraint.constant : 0;
         
-        // Create and store new width constraint
-        tabButton.widthConstraint = [tabButton.widthAnchor constraintEqualToConstant:tabWidth];
-        tabButton.widthConstraint.active = YES;
+        if (fabs(currentConstraintWidth - tabWidth) > 1.0) { // Only update if significantly different
+            // Remove old width constraint if it exists
+            if (tabButton.widthConstraint) {
+                tabButton.widthConstraint.active = NO;
+                tabButton.widthConstraint = nil; // Clear reference
+            }
+            
+            // Create and store new width constraint
+            tabButton.widthConstraint = [tabButton.widthAnchor constraintEqualToConstant:tabWidth];
+            tabButton.widthConstraint.priority = NSLayoutPriorityRequired;
+            tabButton.widthConstraint.active = YES;
+            
+            NSLog(@"TabBarView: Updated constraint for tab '%@' from %.1f to %.1f", tabButton.title, currentConstraintWidth, tabWidth);
+        }
     }
+    
+    [NSAnimationContext endGrouping];
+    
+    // LAYOUT VALIDATION: Force layout update to ensure constraints are applied
+    [self.tabStackView setNeedsLayout:YES];
+    [self setNeedsLayout:YES];
 }
 
 - (void)selectTab:(Tab *)tab {
-    self.selectedTab = tab;
+    // DEBOUNCING: Handle rapid tab selections gracefully
+    self.pendingSelectedTab = tab;
+    
+    // Cancel any existing timer
+    if (self.selectionDebounceTimer && self.selectionDebounceTimer.isValid) {
+        [self.selectionDebounceTimer invalidate];
+    }
+    
+    // Set a short debounce timer to batch rapid selections
+    self.selectionDebounceTimer = [NSTimer scheduledTimerWithTimeInterval:0.05 // 50ms debounce
+                                                                   repeats:NO
+                                                                     block:^(NSTimer * _Nonnull timer) {
+        [self performDebouncedTabSelection];
+    }];
+    
+    NSLog(@"TabBarView: Queued tab selection: %@ (debounced)", tab.title);
+}
+
+- (void)performDebouncedTabSelection {
+    // THREAD SAFETY: Ensure this runs on main thread
+    if (![NSThread isMainThread]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self performDebouncedTabSelection];
+        });
+        return;
+    }
+    
+    Tab *tabToSelect = self.pendingSelectedTab;
+    if (!tabToSelect) return;
+    
+    self.selectedTab = tabToSelect;
+    
+    // VISIBILITY CHECK: Validate tabs are still visible before updating
+    BOOL tabsAreVisible = [self validateTabVisibility];
+    if (!tabsAreVisible) {
+        NSLog(@"TabBarView: WARNING - Tabs not visible during selection, attempting recovery");
+        [self recoverTabVisibility];
+    }
     
     // Update visual appearance of all tab buttons (PURE VISUAL ONLY)
     for (TabButton *tabButton in self.tabButtons) {
-        BOOL isSelected = (tabButton.tab == tab);
+        BOOL isSelected = (tabButton.tab == tabToSelect);
         [tabButton updateAppearanceForSelected:isSelected];
     }
     
-    NSLog(@"TabBarView: Selected tab: %@ (visual update only)", tab.title);
+    NSLog(@"TabBarView: Applied tab selection: %@ (debounced completion)", tabToSelect.title);
+    
+    // Clear pending selection
+    self.pendingSelectedTab = nil;
+}
+
+- (BOOL)validateTabVisibility {
+    // Check if tab buttons are visible and have reasonable frames
+    for (TabButton *tabButton in self.tabButtons) {
+        if (tabButton.isHidden || 
+            tabButton.alphaValue < 0.1 || 
+            tabButton.frame.size.width < 10 || 
+            tabButton.frame.size.height < 10) {
+            NSLog(@"TabBarView: Tab '%@' visibility issue - hidden:%d alpha:%.2f frame:%@", 
+                  tabButton.title, tabButton.isHidden, tabButton.alphaValue, NSStringFromRect(tabButton.frame));
+            return NO;
+        }
+    }
+    return YES;
+}
+
+- (void)recoverTabVisibility {
+    NSLog(@"TabBarView: Attempting to recover tab visibility");
+    
+    // Force all tabs to be visible
+    for (TabButton *tabButton in self.tabButtons) {
+        tabButton.hidden = NO;
+        tabButton.alphaValue = 1.0;
+        
+        // Ensure the button has a layer and it's configured properly
+        if (!tabButton.wantsLayer) {
+            tabButton.wantsLayer = YES;
+        }
+        
+        // Reset any problematic layer properties
+        if (tabButton.layer) {
+            tabButton.layer.hidden = NO;
+            tabButton.layer.opacity = 1.0;
+            
+            // Ensure the layer has a reasonable frame
+            if (CGSizeEqualToSize(tabButton.layer.bounds.size, CGSizeZero)) {
+                [tabButton setNeedsLayout:YES];
+            }
+        }
+    }
+    
+    // Force layout update
+    [self.tabStackView setNeedsLayout:YES];
+    [self setNeedsLayout:YES];
+    
+    // Recalculate tab widths in case that's the issue
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self distributeTabWidthsEvenly];
+    });
+    
+    NSLog(@"TabBarView: Tab visibility recovery completed");
 }
 
 #pragma mark - Layout
@@ -436,6 +602,11 @@
 }
 
 - (void)dealloc {
+    // Clean up timer to prevent memory leaks
+    if (self.selectionDebounceTimer && self.selectionDebounceTimer.isValid) {
+        [self.selectionDebounceTimer invalidate];
+    }
+    
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
