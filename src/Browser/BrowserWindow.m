@@ -362,7 +362,7 @@
         }
         
         // Update window title
-        self.title = [NSString stringWithFormat:@"%@ - StealthKit", webView.title ?: @"StealthKit"];
+        self.title = [NSString stringWithFormat:@"%@ - StealthKit", webView.title ? webView.title : @"StealthKit"];
     }
     
     // Refresh tab bar to show updated titles

@@ -21,9 +21,11 @@ function(configure_compiler_flags target_name)
         -Wpedantic                          # Pedantic warnings
         -Wno-unused-parameter              # Ignore unused parameters (common in delegates)
         -Wno-gnu-zero-variadic-macro-arguments  # Ignore GNU extension warnings
+        -Wno-gnu-conditional-omitted-operand   # Allow ?: with omitted middle operand
         
         # Security flags
         -fstack-protector-strong           # Stack protection
+        -U_FORTIFY_SOURCE                  # Undefine if already defined
         -D_FORTIFY_SOURCE=2                # Buffer overflow protection
         
         # Performance flags

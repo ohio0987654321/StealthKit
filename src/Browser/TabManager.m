@@ -99,7 +99,7 @@
 }
 
 - (Tab *)currentTab {
-    if (self.currentTabIndex >= 0 && self.currentTabIndex < self.mutableTabs.count) {
+    if (self.currentTabIndex >= 0 && self.currentTabIndex < (NSInteger)self.mutableTabs.count) {
         return self.mutableTabs[self.currentTabIndex];
     }
     return nil;
@@ -139,7 +139,7 @@
 }
 
 - (void)closeTabAtIndex:(NSInteger)index {
-    if (index < 0 || index >= self.mutableTabs.count) return;
+    if (index < 0 || index >= (NSInteger)self.mutableTabs.count) return;
     
     Tab *tabToClose = self.mutableTabs[index];
     
@@ -168,7 +168,7 @@
     // Adjust current tab index
     if (index == self.currentTabIndex) {
         // Closed the current tab - select the next one or previous if at end
-        if (index >= self.mutableTabs.count) {
+        if (index >= (NSInteger)self.mutableTabs.count) {
             self.currentTabIndex = self.mutableTabs.count - 1;
         }
         [self selectTabAtIndex:self.currentTabIndex];
@@ -198,7 +198,7 @@
 }
 
 - (void)selectTabAtIndex:(NSInteger)index {
-    if (index < 0 || index >= self.mutableTabs.count) return;
+    if (index < 0 || index >= (NSInteger)self.mutableTabs.count) return;
     
     self.currentTabIndex = index;
     Tab *newCurrentTab = self.mutableTabs[index];
@@ -249,7 +249,7 @@
 #pragma mark - Tab Access
 
 - (Tab *)tabAtIndex:(NSInteger)index {
-    if (index < 0 || index >= self.mutableTabs.count) {
+    if (index < 0 || index >= (NSInteger)self.mutableTabs.count) {
         return nil;
     }
     return self.mutableTabs[index];

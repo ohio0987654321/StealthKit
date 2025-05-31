@@ -72,12 +72,12 @@
 }
 
 - (void)setWindowManager:(id)windowManager {
-    self.windowManager = windowManager;
+    _windowManager = windowManager;
     NSLog(@"ShortcutManager: Window manager connected");
 }
 
 - (void)setTabManager:(id)tabManager {
-    self.tabManager = tabManager;
+    _tabManager = tabManager;
     NSLog(@"ShortcutManager: Tab manager connected");
 }
 
