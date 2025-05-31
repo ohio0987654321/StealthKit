@@ -14,6 +14,7 @@
 @property (nonatomic, strong) NSButton *forwardButton;
 @property (nonatomic, strong) NSButton *reloadButton;
 @property (nonatomic, strong) AddressBarView *addressBar;
+@property (nonatomic, strong) NSButton *addTabButton;
 @end
 
 @implementation ToolbarView
@@ -37,11 +38,29 @@
     // Create address bar
     self.addressBar = [AddressBarView createAddressBar];
     
+    // Create add tab button with clean styling
+    self.addTabButton = [[NSButton alloc] init];
+    self.addTabButton.title = @"+";
+    self.addTabButton.bordered = NO;
+    self.addTabButton.buttonType = NSButtonTypeMomentaryChange;
+    self.addTabButton.target = self;
+    self.addTabButton.action = @selector(addTabButtonPressed:);
+    self.addTabButton.translatesAutoresizingMaskIntoConstraints = NO;
+    
+    // Style the add tab button
+    self.addTabButton.wantsLayer = YES;
+    self.addTabButton.layer.backgroundColor = [NSColor clearColor].CGColor;
+    NSMutableAttributedString *addTabTitle = [[NSMutableAttributedString alloc] initWithString:@"+"];
+    [addTabTitle addAttribute:NSForegroundColorAttributeName value:uiManager.secondaryTextColor range:NSMakeRange(0, 1)];
+    [addTabTitle addAttribute:NSFontAttributeName value:[uiManager systemFontOfSize:16.0] range:NSMakeRange(0, 1)];
+    self.addTabButton.attributedTitle = addTabTitle;
+    
     // Add to view hierarchy
     [self addSubview:self.backButton];
     [self addSubview:self.forwardButton];
     [self addSubview:self.reloadButton];
     [self addSubview:self.addressBar];
+    [self addSubview:self.addTabButton];
 }
 
 - (void)setupLayout {
@@ -76,17 +95,27 @@
         [self.reloadButton.leadingAnchor constraintEqualToAnchor:self.forwardButton.trailingAnchor constant:uiManager.standardSpacing],
         [self.reloadButton.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
         
-        // Address bar - takes remaining space
+        // Address bar - takes remaining space between reload and add tab button
         [self.addressBar.leadingAnchor constraintEqualToAnchor:self.reloadButton.trailingAnchor constant:uiManager.standardSpacing],
-        [self.addressBar.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-uiManager.standardSpacing],
-        [self.addressBar.centerYAnchor constraintEqualToAnchor:self.centerYAnchor]
+        [self.addressBar.trailingAnchor constraintEqualToAnchor:self.addTabButton.leadingAnchor constant:-uiManager.standardSpacing],
+        [self.addressBar.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
+        
+        // Add tab button
+        [self.addTabButton.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-uiManager.standardSpacing],
+        [self.addTabButton.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
+        [self.addTabButton.widthAnchor constraintEqualToConstant:30],
+        [self.addTabButton.heightAnchor constraintEqualToConstant:uiManager.navigationButtonHeight]
     ]];
 }
 
 - (void)setupStyling {
-    // Apply styling through UIManager for consistency
+    // Apply Safari-like styling through UIManager
     UIManager *uiManager = [UIManager sharedManager];
     [uiManager styleAsToolbar:self];
+    
+    // Add visual effects for Safari-like appearance
+    self.wantsLayer = YES;
+    self.layer.masksToBounds = NO;
     
     // Register for theme change notifications
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -115,6 +144,11 @@
 - (void)reloadButtonPressed:(id)sender {
     // Will be handled by parent window
     [NSApp sendAction:@selector(reload) to:nil from:self];
+}
+
+- (void)addTabButtonPressed:(id)sender {
+    // Send add tab action to the responder chain
+    [[NSApplication sharedApplication] sendAction:@selector(createNewTab:) to:nil from:self];
 }
 
 #pragma mark - Theme Support

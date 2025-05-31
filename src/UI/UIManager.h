@@ -69,7 +69,7 @@ typedef NS_ENUM(NSInteger, UITextFieldStyle) {
  */
 - (BOOL)isDarkMode;
 
-#pragma mark - Color System
+#pragma mark - Safari-Like Color System
 /**
  * Primary background color for main content areas.
  */
@@ -79,6 +79,16 @@ typedef NS_ENUM(NSInteger, UITextFieldStyle) {
  * Secondary background color for toolbars and secondary areas.
  */
 @property (nonatomic, readonly) NSColor *secondaryBackgroundColor;
+
+/**
+ * Toolbar background with subtle gradient effect.
+ */
+@property (nonatomic, readonly) NSColor *toolbarBackgroundColor;
+
+/**
+ * Tab bar background color.
+ */
+@property (nonatomic, readonly) NSColor *tabBarBackgroundColor;
 
 /**
  * Primary text color for main content.
@@ -91,7 +101,12 @@ typedef NS_ENUM(NSInteger, UITextFieldStyle) {
 @property (nonatomic, readonly) NSColor *secondaryTextColor;
 
 /**
- * Accent color for interactive elements and highlights.
+ * Tertiary text color for subtle labels.
+ */
+@property (nonatomic, readonly) NSColor *tertiaryTextColor;
+
+/**
+ * Safari blue accent color for interactive elements.
  */
 @property (nonatomic, readonly) NSColor *accentColor;
 
@@ -101,14 +116,49 @@ typedef NS_ENUM(NSInteger, UITextFieldStyle) {
 @property (nonatomic, readonly) NSColor *borderColor;
 
 /**
+ * Subtle border color for internal dividers.
+ */
+@property (nonatomic, readonly) NSColor *subtleBorderColor;
+
+/**
  * Selected state color for buttons and tabs.
  */
 @property (nonatomic, readonly) NSColor *selectedColor;
 
 /**
+ * Hover state color for interactive elements.
+ */
+@property (nonatomic, readonly) NSColor *hoverColor;
+
+/**
+ * Active/pressed state color.
+ */
+@property (nonatomic, readonly) NSColor *activeColor;
+
+/**
  * Disabled state color for inactive elements.
  */
 @property (nonatomic, readonly) NSColor *disabledColor;
+
+/**
+ * Shadow color for depth effects.
+ */
+@property (nonatomic, readonly) NSColor *shadowColor;
+
+/**
+ * Address bar background color.
+ */
+@property (nonatomic, readonly) NSColor *addressBarBackgroundColor;
+
+/**
+ * Tab background color for inactive tabs.
+ */
+@property (nonatomic, readonly) NSColor *inactiveTabColor;
+
+/**
+ * Tab background color for active tabs.
+ */
+@property (nonatomic, readonly) NSColor *activeTabColor;
 
 #pragma mark - Typography System
 /**

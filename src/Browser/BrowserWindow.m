@@ -118,11 +118,19 @@
     // Connect tab bar to tab manager
     self.tabBarView.tabManager = self.tabManager;
     
-    // Listen for tab changes
+    // Listen for tab changes BEFORE creating tab manager
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(currentTabChanged:)
                                                  name:@"StealthKitCurrentTabChanged"
-                                               object:self.tabManager];
+                                               object:nil]; // Listen to all tab managers
+    
+    // CRITICAL FIX: Ensure initial tab is properly displayed
+    if (self.tabManager.currentTab) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self switchToWebView:self.tabManager.currentTab.webView];
+            NSLog(@"BrowserWindow: Initial tab web view loaded");
+        });
+    }
     
     NSLog(@"BrowserWindow: Tab manager setup completed");
 }
@@ -163,6 +171,11 @@
     if (self.webView) {
         [self.webView reload];
     }
+}
+
+- (void)createNewTab:(id)sender {
+    [self.tabManager createNewTab:YES];
+    NSLog(@"BrowserWindow: New tab created via toolbar button");
 }
 
 #pragma mark - Find Functionality
@@ -342,31 +355,42 @@
 }
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
-    // Update address bar with current URL
-    if (webView.URL) {
-        [self.toolbarView.addressBar updateWithURL:webView.URL];
+    // Find the tab that owns this webView
+    Tab *ownerTab = nil;
+    for (Tab *tab in self.tabManager.tabs) {
+        if (tab.webView == webView) {
+            ownerTab = tab;
+            break;
+        }
     }
     
-    // Update toolbar button states
-    [self.toolbarView updateNavigationButtons:webView.canGoBack canGoForward:webView.canGoForward];
-    
-    // Update current tab
-    Tab *currentTab = self.tabManager.currentTab;
-    if (currentTab && currentTab.webView == webView) {
-        currentTab.isLoading = NO;
-        currentTab.url = webView.URL;
+    if (ownerTab) {
+        ownerTab.isLoading = NO;
+        ownerTab.url = webView.URL;
         
-        // Update tab title
-        if (webView.title.length > 0) {
-            currentTab.title = webView.title;
+        // Update tab title with immediate notification
+        NSString *newTitle = webView.title.length > 0 ? webView.title : @"New Tab";
+        if (![ownerTab.title isEqualToString:newTitle]) {
+            ownerTab.title = newTitle;
+            
+            // Notify that this specific tab's title changed
+            [self notifyTabTitleChanged:ownerTab];
         }
         
-        // Update window title
-        self.title = [NSString stringWithFormat:@"%@ - StealthKit", webView.title ? webView.title : @"StealthKit"];
+        // If this is the current tab, update UI elements
+        if (ownerTab == self.tabManager.currentTab) {
+            // Update address bar with current URL
+            if (webView.URL) {
+                [self.toolbarView.addressBar updateWithURL:webView.URL];
+            }
+            
+            // Update toolbar button states
+            [self.toolbarView updateNavigationButtons:webView.canGoBack canGoForward:webView.canGoForward];
+            
+            // Keep window title as StealthKit only
+            self.title = @"StealthKit";
+        }
     }
-    
-    // Refresh tab bar to show updated titles
-    [self.tabBarView updateTabs];
 }
 
 - (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error {
@@ -384,27 +408,36 @@
 
 #pragma mark - Notifications
 
+- (void)notifyTabTitleChanged:(Tab *)tab {
+    // Post notification that a tab's title has changed
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"StealthKitTabTitleChanged" 
+                                                        object:self 
+                                                      userInfo:@{@"tab": tab, @"title": tab.title}];
+}
+
 - (void)currentTabChanged:(NSNotification *)notification {
     Tab *currentTab = notification.userInfo[@"currentTab"];
     if (currentTab) {
         // Switch to the new tab's web view
         [self switchToWebView:currentTab.webView];
         
-        // Update address bar
-        if (currentTab.url) {
+        // Update address bar - clear for welcome page
+        if (currentTab.url && [currentTab.url.absoluteString isEqualToString:@"stealthkit://welcome"]) {
+            // Clear address bar for welcome page
+            [self.toolbarView.addressBar clear];
+        } else if (currentTab.url) {
             [self.toolbarView.addressBar updateWithURL:currentTab.url];
+        } else {
+            // Clear address bar for empty tabs
+            [self.toolbarView.addressBar clear];
         }
         
         // Update toolbar buttons
         [self.toolbarView updateNavigationButtons:currentTab.webView.canGoBack 
                                      canGoForward:currentTab.webView.canGoForward];
         
-        // Update window title
-        if (currentTab.title.length > 0) {
-            self.title = [NSString stringWithFormat:@"%@ - StealthKit", currentTab.title];
-        } else {
-            self.title = @"StealthKit";
-        }
+        // Keep window title as StealthKit only
+        self.title = @"StealthKit";
         
         NSLog(@"BrowserWindow: Switched to tab: %@", currentTab.title);
     }

@@ -41,6 +41,9 @@
     self.webView = [[WKWebView alloc] initWithFrame:NSZeroRect configuration:config];
     self.webView.translatesAutoresizingMaskIntoConstraints = NO;
     
+    // Load welcome page by default
+    [self loadWelcomePage];
+    
     NSLog(@"Tab: Created new tab with ID: %@", self.tabId);
 }
 
@@ -58,6 +61,24 @@
     self.isLoading = YES;
     [self.webView loadHTMLString:htmlString baseURL:baseURL];
     NSLog(@"Tab %@: Loading HTML content", self.tabId);
+}
+
+- (void)loadWelcomePage {
+    // Set a special URL for the welcome page (for internal tracking only)
+    self.url = [NSURL URLWithString:@"stealthkit://welcome"];
+    self.title = @"Welcome";
+    
+    // Create simple welcome HTML
+    NSString *welcomeHTML = [self createWelcomeHTML];
+    
+    // Load the welcome HTML with nil baseURL to avoid URL scheme issues
+    [self.webView loadHTMLString:welcomeHTML baseURL:nil];
+    
+    NSLog(@"Tab %@: Loaded welcome page", self.tabId);
+}
+
+- (NSString *)createWelcomeHTML {
+    return @"<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Welcome to StealthKit</title><style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;margin:0;padding:60px 40px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;text-align:center;min-height:100vh}.container{max-width:600px;margin:0 auto}h1{font-size:3rem;margin-bottom:1rem}.subtitle{font-size:1.2rem;margin-bottom:3rem}.feature{background:rgba(255,255,255,.1);padding:2rem;border-radius:12px;margin:1rem}.shortcut{display:flex;justify-content:space-between;padding:.5rem}.key{background:rgba(255,255,255,.2);padding:.25rem .5rem;border-radius:4px;font-family:monospace}</style></head><body><div class='container'><h1>🛡️ StealthKit</h1><p class='subtitle'>Private & Secure Web Browsing</p><div class='feature'><h3>🔒 Privacy First</h3><p>Built with privacy and security at its core</p></div><div class='feature'><h3>⚡ Fast & Light</h3><p>Optimized for speed and minimal resource usage</p></div><div class='feature'><h3>⌨️ Keyboard Shortcuts</h3><div class='shortcut'><span>New Tab</span><span class='key'>⌘ T</span></div><div class='shortcut'><span>Close Tab</span><span class='key'>⌘ W</span></div><div class='shortcut'><span>Focus Address Bar</span><span class='key'>⌘ L</span></div></div></div></body></html>";
 }
 
 @end

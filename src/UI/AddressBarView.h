@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Smart address bar that handles both URLs and search queries.
  * Provides Safari-like appearance and behavior.
  */
-@interface AddressBarView : NSTextField
+@interface AddressBarView : NSView
 
 /// Delegate for handling user input
 @property (nonatomic, weak, nullable) id<AddressBarViewDelegate> addressBarDelegate;
