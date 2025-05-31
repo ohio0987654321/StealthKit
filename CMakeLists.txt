@@ -58,6 +58,20 @@ configure_file(
     COPYONLY
 )
 
+# Set app icon
+set_target_properties(StealthKit PROPERTIES
+    MACOSX_BUNDLE_ICON_FILE "AppIcon.icns"
+)
+
+# Copy icon to bundle Resources
+set(APP_ICON_PATH "${CMAKE_SOURCE_DIR}/resources/icons/AppIcon.icns")
+if(EXISTS "${APP_ICON_PATH}")
+    set_source_files_properties("${APP_ICON_PATH}" PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources"
+    )
+    target_sources(StealthKit PRIVATE "${APP_ICON_PATH}")
+endif()
+
 # Enable compile commands export for VSCode IntelliSense
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
