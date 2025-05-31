@@ -2,8 +2,8 @@
 # CMake module for Clang compiler optimization and flags
 
 function(configure_compiler_flags target_name)
-    # Ensure we're using Clang
-    if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" OR NOT CMAKE_OBJC_COMPILER_ID STREQUAL "Clang")
+    # Ensure we're using Clang or AppleClang
+    if(NOT CMAKE_C_COMPILER_ID MATCHES ".*Clang" OR NOT CMAKE_OBJC_COMPILER_ID MATCHES ".*Clang")
         message(WARNING "StealthKit is optimized for Clang compiler")
     endif()
 
@@ -22,6 +22,7 @@ function(configure_compiler_flags target_name)
         -Wno-unused-parameter              # Ignore unused parameters (common in delegates)
         -Wno-gnu-zero-variadic-macro-arguments  # Ignore GNU extension warnings
         -Wno-gnu-conditional-omitted-operand   # Allow ?: with omitted middle operand
+        -Wno-gnu-statement-expression-from-macro-expansion  # Allow GNU statement expressions in macros
         
         # Security flags
         -fstack-protector-strong           # Stack protection
