@@ -1,0 +1,40 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:stealthkit}/new",
+            "name": "Debug SwiftBrowser (new)",
+            "program": "${workspaceFolder:stealthkit}/.build/debug/SwiftBrowser",
+            "preLaunchTask": "swift: Build Debug SwiftBrowser (new)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:stealthkit}/new",
+            "name": "Release SwiftBrowser (new)",
+            "program": "${workspaceFolder:stealthkit}/.build/release/SwiftBrowser",
+            "preLaunchTask": "swift: Build Release SwiftBrowser (new)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:stealthkit}",
+            "name": "Debug SwiftBrowser",
+            "program": "${workspaceFolder:stealthkit}/.build/debug/SwiftBrowser",
+            "preLaunchTask": "swift: Build Debug SwiftBrowser"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:stealthkit}",
+            "name": "Release SwiftBrowser",
+            "program": "${workspaceFolder:stealthkit}/.build/release/SwiftBrowser",
+            "preLaunchTask": "swift: Build Release SwiftBrowser"
+        }
+    ]
+}
