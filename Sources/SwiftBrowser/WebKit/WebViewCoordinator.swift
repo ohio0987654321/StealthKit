@@ -9,29 +9,7 @@
 import SwiftUI
 import WebKit
 
-// WebView cache to prevent reloads when switching tabs
-class WebViewCache {
-    static let shared = WebViewCache()
-    private var webViews: [UUID: WKWebView] = [:]
-    
-    private init() {}
-    
-    func getWebView(for tabId: UUID) -> WKWebView? {
-        return webViews[tabId]
-    }
-    
-    func setWebView(_ webView: WKWebView, for tabId: UUID) {
-        webViews[tabId] = webView
-    }
-    
-    func removeWebView(for tabId: UUID) {
-        webViews.removeValue(forKey: tabId)
-    }
-    
-    func clearCache() {
-        webViews.removeAll()
-    }
-}
+// Simplified WebView creation - no caching
 
 struct WebView: NSViewRepresentable {
     @Binding var tab: Tab
@@ -39,32 +17,19 @@ struct WebView: NSViewRepresentable {
     let onWebViewCreated: ((WKWebView) -> Void)?
     
     func makeNSView(context: Context) -> WKWebView {
-        // Check if we have a cached WebView for this tab
-        if let cachedWebView = WebViewCache.shared.getWebView(for: tab.id) {
-            // Use existing WebView for tab switching
-            context.coordinator.tab = tab
-            cachedWebView.navigationDelegate = context.coordinator
-            cachedWebView.uiDelegate = context.coordinator
-            onWebViewCreated?(cachedWebView)
-            return cachedWebView
-        }
-        
-        // Create fresh WebView for new tabs
+        // Always create fresh WebView - no caching
         let webView = WKWebView()
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         
-        // Cache the WebView for future tab switches
-        WebViewCache.shared.setWebView(webView, for: tab.id)
-        
         // Notify parent about WebView creation
         onWebViewCreated?(webView)
         
-        // Load initial content for new tabs
+        // Load initial content
         if let url = tab.url {
             webView.load(URLRequest(url: url))
         } else {
-            // For new empty tabs, always load custom new tab page
+            // For new empty tabs, load custom new tab page
             loadNewTabPage(in: webView)
         }
         
@@ -73,13 +38,6 @@ struct WebView: NSViewRepresentable {
     
     func updateNSView(_ nsView: WKWebView, context: Context) {
         context.coordinator.tab = tab
-        
-        // Check if this is a cached WebView - if so, don't reload
-        let cachedWebView = WebViewCache.shared.getWebView(for: tab.id)
-        if cachedWebView === nsView {
-            // This is a cached WebView being displayed, don't reload
-            return
-        }
         
         // Only load URL if it's genuinely different from current URL
         if let url = tab.url, nsView.url != url {
@@ -134,6 +92,44 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, 
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         decisionHandler(.allow)
+    }
+    
+    // MARK: - WKUIDelegate Methods
+    
+    func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, 
+                 for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        // Prevent new windows/popups - handle navigation in the current tab instead
+        if let url = navigationAction.request.url {
+            webView.load(URLRequest(url: url))
+        }
+        return nil
+    }
+    
+    func webViewDidClose(_ webView: WKWebView) {
+        // Handle webview close events - prevent unwanted UI changes
+    }
+    
+    func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, 
+                 initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
+        // Handle JavaScript alerts properly
+        let alert = NSAlert()
+        alert.messageText = "Alert"
+        alert.informativeText = message
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+        completionHandler()
+    }
+    
+    func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, 
+                 initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
+        // Handle JavaScript confirms properly
+        let alert = NSAlert()
+        alert.messageText = "Confirm"
+        alert.informativeText = message
+        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: "Cancel")
+        let response = alert.runModal()
+        completionHandler(response == .alertFirstButtonReturn)
     }
 }
 

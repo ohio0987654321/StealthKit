@@ -3,7 +3,7 @@
 //  SwiftBrowser
 //
 //  Central coordinator for all stealth functionality.
-//  Manages window cloaking, background operation, and privacy features.
+//  Manages window cloaking and privacy features.
 //
 
 import Foundation
@@ -15,14 +15,8 @@ class StealthManager {
     static let shared = StealthManager()
     
     var isStealthModeActive: Bool = true
-    var isBackgroundOperationEnabled: Bool = true
     var isWindowCloakingEnabled: Bool = true
-    var isDockHidden: Bool = true
-    var isStatusBarVisible: Bool = true
     var isAlwaysOnTop: Bool = false
-    
-    private var statusBarController: StatusBarController?
-    private var originalActivationPolicy: NSApplication.ActivationPolicy = .regular
     
     private init() {
         initializeStealthFeatures()
@@ -31,21 +25,7 @@ class StealthManager {
     // MARK: - Initialization
     
     func initializeStealthFeatures() {
-        // Store original activation policy
-        originalActivationPolicy = NSApp.activationPolicy()
-        
-        // Initialize status bar controller
-        statusBarController = StatusBarController()
-        
         // Apply default stealth settings safely
-        if isDockHidden {
-            setDockHidden(true)
-        }
-        
-        if isStatusBarVisible {
-            setStatusBarVisible(true)
-        }
-        
         if isWindowCloakingEnabled {
             setWindowCloakingEnabled(true)
         }
@@ -75,57 +55,6 @@ class StealthManager {
         }
     }
     
-    // MARK: - Background Operation
-    
-    func enableBackgroundOperation() {
-        guard !isBackgroundOperationEnabled else { return }
-        
-        isBackgroundOperationEnabled = true
-        
-        // Hide from dock
-        setDockHidden(true)
-        
-        // Show status bar
-        setStatusBarVisible(true)
-    }
-    
-    func disableBackgroundOperation() {
-        guard isBackgroundOperationEnabled else { return }
-        
-        isBackgroundOperationEnabled = false
-        
-        // Show in dock
-        setDockHidden(false)
-        
-        // Hide status bar
-        setStatusBarVisible(false)
-    }
-    
-    // MARK: - Dock Management
-    
-    func setDockHidden(_ hidden: Bool) {
-        isDockHidden = hidden
-        
-        if hidden {
-            // Use .accessory for background operation and menu bar app functionality
-            NSApp.setActivationPolicy(.accessory)
-        } else {
-            NSApp.setActivationPolicy(originalActivationPolicy)
-        }
-    }
-    
-    // MARK: - Status Bar Management
-    
-    func setStatusBarVisible(_ visible: Bool) {
-        isStatusBarVisible = visible
-        
-        if visible {
-            statusBarController?.setupStatusBar()
-        } else {
-            statusBarController?.removeStatusBar()
-        }
-    }
-    
     // MARK: - Stealth Mode Control
     
     func setStealthModeEnabled(_ enabled: Bool) {
@@ -134,11 +63,9 @@ class StealthManager {
         if enabled {
             // Enable all stealth features
             setWindowCloakingEnabled(true)
-            enableBackgroundOperation()
         } else {
             // Disable stealth features
             setWindowCloakingEnabled(false)
-            disableBackgroundOperation()
         }
     }
     

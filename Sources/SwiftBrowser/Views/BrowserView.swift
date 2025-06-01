@@ -23,7 +23,7 @@ enum ContentType {
     case settingsSearchEngine
     case settingsStealth
     case webTab(Tab)
-    case noSelection
+    case welcome
 }
 
 struct BrowserView: View {
@@ -32,7 +32,7 @@ struct BrowserView: View {
     @FocusState private var isAddressBarFocused: Bool
     @State private var currentWebView: WKWebView?
     @State private var selectedSidebarItem: SidebarItem? = nil
-    @State private var currentContent: ContentType = .noSelection
+    @State private var currentContent: ContentType = .welcome
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -41,7 +41,8 @@ struct BrowserView: View {
             HierarchicalSidebarView(
                 viewModel: viewModel,
                 selectedItem: $selectedSidebarItem,
-                onSelectionChange: handleSidebarSelection
+                onSelectionChange: handleSidebarSelection,
+                onCloseTab: handleCloseSpecificTab
             )
             .navigationSplitViewColumnWidth(min: 250, ideal: 280, max: 350)
         } detail: {
@@ -64,17 +65,12 @@ struct BrowserView: View {
                             currentWebView = webView
                         }
                     )
-                case .noSelection:
-                    VStack(spacing: 16) {
-                        Image(systemName: "sidebar.left")
-                            .font(.system(size: 48))
-                            .foregroundColor(.secondary)
-                        Text("No selection")
-                            .font(.title2)
-                            .foregroundColor(.secondary)
-                        Text("Select an item from the sidebar")
-                            .foregroundColor(.secondary)
-                    }
+                case .welcome:
+                    WelcomeView(onCreateNewTab: {
+                        let newTab = viewModel.createNewTab()
+                        selectedSidebarItem = .tab(newTab.id)
+                        currentContent = .webTab(newTab)
+                    })
                 }
             }
             .navigationTitle("")
@@ -128,7 +124,7 @@ struct BrowserView: View {
                                 addressText = newURL?.absoluteString ?? ""
                             }
                         }
-                        .disabled(!isWebContentActive() && addressText.isEmpty)
+                        .disabled(!isWebContentActive())
                 }
             }
         }
@@ -171,15 +167,19 @@ struct BrowserView: View {
         switch item {
         case .settingsSearchEngine:
             currentContent = .settingsSearchEngine
+            currentWebView = nil
         case .settingsStealth:
             currentContent = .settingsStealth
+            currentWebView = nil
         case .tab(let tabId):
             if let tab = viewModel.tabs.first(where: { $0.id == tabId }) {
                 currentContent = .webTab(tab)
                 viewModel.selectTab(at: viewModel.tabs.firstIndex(where: { $0.id == tabId }) ?? 0)
+                // currentWebView will be updated when WebView is created
             }
         default:
-            currentContent = .noSelection
+            currentContent = .welcome
+            currentWebView = nil
         }
     }
     
@@ -189,6 +189,10 @@ struct BrowserView: View {
         if let url = createURL(from: addressText) {
             if case .webTab(let currentTab) = currentContent {
                 currentTab.url = url
+                // Force the WebView to load the new URL
+                if let webView = getCurrentWebView() {
+                    webView.load(URLRequest(url: url))
+                }
             } else {
                 // Create new tab and navigate to it
                 let newTab = viewModel.createNewWebTab(with: url)
@@ -277,7 +281,7 @@ struct BrowserView: View {
                 // Select another tab or show no selection
                 if viewModel.tabs.isEmpty {
                     selectedSidebarItem = nil
-                    currentContent = .noSelection
+                    currentContent = .welcome
                 } else {
                     let newIndex = min(index, viewModel.tabs.count - 1)
                     let newTab = viewModel.tabs[newIndex]
@@ -295,6 +299,28 @@ struct BrowserView: View {
             }
         }
     }
+    
+    private func handleCloseSpecificTab(_ tab: Tab) {
+        if let index = viewModel.tabs.firstIndex(where: { $0.id == tab.id }) {
+            viewModel.closeTab(at: index)
+            
+            // Update UI state appropriately
+            if viewModel.tabs.isEmpty {
+                selectedSidebarItem = nil
+                currentContent = .welcome
+                currentWebView = nil
+            } else {
+                // If we closed the currently active tab, select another
+                if case .webTab(let currentTab) = currentContent, currentTab.id == tab.id {
+                    let newIndex = min(index, viewModel.tabs.count - 1)
+                    let newTab = viewModel.tabs[newIndex]
+                    selectedSidebarItem = .tab(newTab.id)
+                    currentContent = .webTab(newTab)
+                    viewModel.selectTab(at: newIndex)
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Hierarchical Sidebar
@@ -303,6 +329,7 @@ struct HierarchicalSidebarView: View {
     @Bindable var viewModel: BrowserViewModel
     @Binding var selectedItem: SidebarItem?
     let onSelectionChange: (SidebarItem) -> Void
+    let onCloseTab: (Tab) -> Void
     
     @State private var settingsExpanded = true
     @State private var tabsExpanded = true
@@ -342,11 +369,7 @@ struct HierarchicalSidebarView: View {
                         tabs: viewModel.tabs,
                         selectedItem: $selectedItem,
                         onSelectionChange: onSelectionChange,
-                        onCloseTab: { tab in
-                            if let index = viewModel.tabs.firstIndex(where: { $0.id == tab.id }) {
-                                viewModel.closeTab(at: index)
-                            }
-                        }
+                        onCloseTab: onCloseTab
                     )
                 }
             }
@@ -693,16 +716,8 @@ struct SettingsStealthView: View {
                         .padding(.vertical, 4)
                     }
                     
-                    GroupBox("App Visibility") {
+                    GroupBox("Window Behavior") {
                         VStack(alignment: .leading, spacing: 8) {
-                            Toggle("Hide from Dock", isOn: Binding(
-                                get: { stealthManager.isDockHidden },
-                                set: { stealthManager.setDockHidden($0) }
-                            ))
-                            Text("Hide app icon from the macOS Dock")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
                             Toggle("Always on Top", isOn: Binding(
                                 get: { stealthManager.isAlwaysOnTop },
                                 set: { stealthManager.setAlwaysOnTop($0) }

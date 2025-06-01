@@ -21,7 +21,7 @@ class BrowserViewModel {
     }
     
     init() {
-        createNewWebTab()
+        // Start with no tabs - show native welcome state instead
     }
     
     @discardableResult
@@ -48,18 +48,18 @@ class BrowserViewModel {
     func closeTab(at index: Int) {
         guard index >= 0 && index < tabs.count else { return }
         
-        // Clean up WebView cache for the closed tab
-        let tabToClose = tabs[index]
-        WebViewCache.shared.removeWebView(for: tabToClose.id)
+        // Tab cleanup - no cache to manage
         
         tabs.remove(at: index)
         
-        if tabs.isEmpty {
-            createNewTab()
-        } else if currentTabIndex >= tabs.count {
-            currentTabIndex = tabs.count - 1
-        } else if index <= currentTabIndex && currentTabIndex > 0 {
-            currentTabIndex -= 1
+        if !tabs.isEmpty {
+            if currentTabIndex >= tabs.count {
+                currentTabIndex = tabs.count - 1
+            } else if index <= currentTabIndex && currentTabIndex > 0 {
+                currentTabIndex -= 1
+            }
+        } else {
+            currentTabIndex = 0
         }
     }
     

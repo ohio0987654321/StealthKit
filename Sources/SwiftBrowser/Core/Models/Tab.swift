@@ -33,7 +33,14 @@ class Tab: Identifiable {
     
     func updateFromWebView(_ webView: WKWebView) {
         self.title = webView.title ?? "New Tab"
-        self.url = webView.url
+        
+        // Don't sync unwanted URLs (about:blank, data: URLs from custom new tab pages)
+        if let webViewURL = webView.url,
+           !webViewURL.absoluteString.hasPrefix("about:") &&
+           !webViewURL.absoluteString.hasPrefix("data:") {
+            self.url = webViewURL
+        }
+        
         self.isLoading = webView.isLoading
         self.canGoBack = webView.canGoBack
         self.canGoForward = webView.canGoForward
