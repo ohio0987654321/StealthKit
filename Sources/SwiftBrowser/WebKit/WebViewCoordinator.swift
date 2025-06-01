@@ -39,37 +39,33 @@ struct WebView: NSViewRepresentable {
     let onWebViewCreated: ((WKWebView) -> Void)?
     
     func makeNSView(context: Context) -> WKWebView {
-        // Try to get existing WebView from cache first
+        // Check if we have a cached WebView for this tab
         if let cachedWebView = WebViewCache.shared.getWebView(for: tab.id) {
-            // Update coordinator reference
+            // Use existing WebView for tab switching
             context.coordinator.tab = tab
             cachedWebView.navigationDelegate = context.coordinator
             cachedWebView.uiDelegate = context.coordinator
-            
-            // Notify parent about WebView
             onWebViewCreated?(cachedWebView)
-            
             return cachedWebView
         }
         
-        // Create new WebView if not in cache
+        // Create fresh WebView for new tabs
         let webView = WKWebView()
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         
-        // Cache the WebView
+        // Cache the WebView for future tab switches
         WebViewCache.shared.setWebView(webView, for: tab.id)
         
         // Notify parent about WebView creation
         onWebViewCreated?(webView)
         
-        // Load initial URL only for new WebViews that have a URL
-        // New tabs without URL should show empty content
+        // Load initial content for new tabs
         if let url = tab.url {
             webView.load(URLRequest(url: url))
         } else {
-            // For new empty tabs, load about:blank to ensure clean state
-            webView.loadHTMLString("", baseURL: nil)
+            // For new empty tabs, always load custom new tab page
+            loadNewTabPage(in: webView)
         }
         
         return webView
@@ -78,20 +74,16 @@ struct WebView: NSViewRepresentable {
     func updateNSView(_ nsView: WKWebView, context: Context) {
         context.coordinator.tab = tab
         
-        // Don't reload when switching to cached WebViews
-        // Only load if this is a genuine new navigation request
-        if let url = tab.url {
-            let cachedWebView = WebViewCache.shared.getWebView(for: tab.id)
-            
-            // If this is a cached WebView being reused, don't reload
-            if cachedWebView === nsView {
-                return
-            }
-            
-            // Only load if URL is genuinely different and this isn't just tab switching
-            if nsView.url != url && context.coordinator.shouldLoadURL(url, in: nsView) {
-                nsView.load(URLRequest(url: url))
-            }
+        // Check if this is a cached WebView - if so, don't reload
+        let cachedWebView = WebViewCache.shared.getWebView(for: tab.id)
+        if cachedWebView === nsView {
+            // This is a cached WebView being displayed, don't reload
+            return
+        }
+        
+        // Only load URL if it's genuinely different from current URL
+        if let url = tab.url, nsView.url != url {
+            nsView.load(URLRequest(url: url))
         }
     }
     
@@ -143,4 +135,55 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         decisionHandler(.allow)
     }
+}
+
+// MARK: - New Tab Page
+
+func loadNewTabPage(in webView: WKWebView) {
+    let html = createNewTabHTML()
+    webView.loadHTMLString(html, baseURL: nil)
+}
+
+func createNewTabHTML() -> String {
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>New Tab</title>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 2rem; background: #f5f5f5; }
+            .container { max-width: 600px; margin: 0 auto; text-align: center; }
+            h1 { color: #333; margin-bottom: 2rem; }
+            .search { width: 100%; padding: 1rem; font-size: 1.1rem; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 2rem; }
+            .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; }
+            .link { background: white; padding: 1rem; border-radius: 8px; text-decoration: none; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>New Tab</h1>
+            <input type="text" class="search" placeholder="Search or enter URL..." id="search">
+            <div class="links">
+                <a href="https://www.google.com" class="link">Google</a>
+                <a href="https://github.com" class="link">GitHub</a>
+                <a href="https://stackoverflow.com" class="link">Stack Overflow</a>
+                <a href="https://news.ycombinator.com" class="link">Hacker News</a>
+            </div>
+        </div>
+        <script>
+            document.getElementById('search').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const query = e.target.value.trim();
+                    if (query.includes('.') && !query.includes(' ')) {
+                        window.location.href = query.startsWith('http') ? query : 'https://' + query;
+                    } else {
+                        window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(query);
+                    }
+                }
+            });
+        </script>
+    </body>
+    </html>
+    """
 }

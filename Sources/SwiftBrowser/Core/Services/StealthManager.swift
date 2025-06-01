@@ -31,30 +31,26 @@ class StealthManager {
     // MARK: - Initialization
     
     func initializeStealthFeatures() {
-        do {
-            // Store original activation policy
-            originalActivationPolicy = NSApp.activationPolicy()
-            
-            // Initialize status bar controller
-            statusBarController = StatusBarController()
-            
-            // Apply default stealth settings safely
-            if isDockHidden {
-                setDockHidden(true)
-            }
-            
-            if isStatusBarVisible {
-                setStatusBarVisible(true)
-            }
-            
-            if isWindowCloakingEnabled {
-                setWindowCloakingEnabled(true)
-            }
-            
-            print("StealthManager initialized successfully")
-        } catch {
-            print("Error initializing StealthManager: \(error)")
+        // Store original activation policy
+        originalActivationPolicy = NSApp.activationPolicy()
+        
+        // Initialize status bar controller
+        statusBarController = StatusBarController()
+        
+        // Apply default stealth settings safely
+        if isDockHidden {
+            setDockHidden(true)
         }
+        
+        if isStatusBarVisible {
+            setStatusBarVisible(true)
+        }
+        
+        if isWindowCloakingEnabled {
+            setWindowCloakingEnabled(true)
+        }
+        
+        print("StealthManager initialized successfully")
     }
     
     // MARK: - Window Management
@@ -111,6 +107,7 @@ class StealthManager {
         isDockHidden = hidden
         
         if hidden {
+            // Use .accessory for background operation and menu bar app functionality
             NSApp.setActivationPolicy(.accessory)
         } else {
             NSApp.setActivationPolicy(originalActivationPolicy)

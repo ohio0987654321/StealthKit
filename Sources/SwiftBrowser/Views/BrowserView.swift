@@ -77,8 +77,7 @@ struct BrowserView: View {
                     }
                 }
             }
-            .navigationTitle("") // Remove app name from title bar
-            .toolbarRole(.editor) // Ensure toolbar stays visible
+            .navigationTitle("")
             .toolbar {
                 // Always show navigation controls, but disable when not applicable
                 ToolbarItemGroup(placement: .navigation) {
