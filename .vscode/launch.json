@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:stealthkit}/new",
+            "name": "Debug SwiftBrowser (new)",
+            "program": "${workspaceFolder:stealthkit}/new/.build/debug/SwiftBrowser",
+            "preLaunchTask": "swift: Build Debug SwiftBrowser (new)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:stealthkit}/new",
+            "name": "Release SwiftBrowser (new)",
+            "program": "${workspaceFolder:stealthkit}/new/.build/release/SwiftBrowser",
+            "preLaunchTask": "swift: Build Release SwiftBrowser (new)"
+        }
+    ]
+}

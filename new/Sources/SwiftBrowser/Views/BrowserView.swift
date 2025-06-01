@@ -13,9 +13,7 @@ import AppKit
 
 enum SidebarItem: Hashable {
     case settingsSection
-    case settingsGeneralGroup
     case settingsSearchEngine
-    case settingsExtensionsGroup
     case settingsStealth
     case tabsSection
     case tab(UUID)
@@ -135,8 +133,7 @@ struct BrowserView: View {
                 }
             }
         }
-        .toolbar(removing: .sidebarToggle) // Remove sidebar toggle button
-        .navigationSplitViewStyle(.balanced) // Ensure sidebar always visible
+        .navigationSplitViewStyle(.prominentDetail) // Force sidebar always visible
         .frame(minWidth: 900, minHeight: 600)
         .onAppear {
             setupKeyboardShortcuts()
@@ -405,18 +402,15 @@ struct SidebarSectionHeader: View {
 struct SidebarSettingsItems: View {
     @Binding var selectedItem: SidebarItem?
     let onSelectionChange: (SidebarItem) -> Void
-    @State private var generalGroupExpanded = false
-    @State private var extensionsGroupExpanded = false
+    @State private var generalGroupExpanded = true
+    @State private var extensionsGroupExpanded = true
     
     var body: some View {
         VStack(spacing: 0) {
-            // General Group
-            SidebarGroupRowView(
-                icon: "gearshape",
+            // General Group Header (non-clickable)
+            SidebarGroupHeaderView(
                 title: "General",
-                isExpanded: $generalGroupExpanded,
-                isSelected: selectedItem == .settingsGeneralGroup,
-                onSelect: { onSelectionChange(.settingsGeneralGroup) }
+                isExpanded: $generalGroupExpanded
             )
             
             if generalGroupExpanded {
@@ -429,13 +423,10 @@ struct SidebarSettingsItems: View {
                 )
             }
             
-            // Extensions Group
-            SidebarGroupRowView(
-                icon: "puzzlepiece.extension",
+            // Extensions Group Header (non-clickable)
+            SidebarGroupHeaderView(
                 title: "Extensions",
-                isExpanded: $extensionsGroupExpanded,
-                isSelected: selectedItem == .settingsExtensionsGroup,
-                onSelect: { onSelectionChange(.settingsExtensionsGroup) }
+                isExpanded: $extensionsGroupExpanded
             )
             
             if extensionsGroupExpanded {
@@ -471,56 +462,38 @@ struct SidebarTabItems: View {
     }
 }
 
-struct SidebarGroupRowView: View {
-    let icon: String
+// MARK: - New Group Header View (Non-clickable)
+
+struct SidebarGroupHeaderView: View {
     let title: String
     @Binding var isExpanded: Bool
-    let isSelected: Bool
-    let onSelect: () -> Void
-    @State private var isHovered = false
     
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                .font(.system(size: 10))
-                .foregroundColor(.secondary)
-                .frame(width: 12, height: 12)
-            
-            Image(systemName: icon)
-                .foregroundColor(.secondary)
-                .frame(width: 16, height: 16)
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            }) {
+                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 9))
+                    .foregroundColor(.secondary)
+                    .frame(width: 10, height: 10)
+            }
+            .buttonStyle(PlainButtonStyle())
             
             Text(title)
-                .font(.system(size: 13))
-                .foregroundColor(.primary)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundColor(.secondary)
+                .textCase(.uppercase)
                 .lineLimit(1)
             
             Spacer()
         }
-        .padding(.horizontal, 32)
-        .padding(.vertical, 6)
-        .background(
-            Rectangle()
-                .fill(isSelected ? Color.accentColor.opacity(0.15) : (isHovered ? Color(.controlAccentColor).opacity(0.05) : Color.clear))
-        )
-        .overlay(
-            Rectangle()
-                .fill(isSelected ? Color.accentColor : Color.clear)
-                .frame(width: 3),
-            alignment: .leading
-        )
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isExpanded.toggle()
-            }
-            onSelect()
-        }
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
+        .padding(.horizontal, 32) // Level 1 indentation under SETTINGS
+        .padding(.vertical, 4)
+        .background(Color(.controlBackgroundColor))
     }
 }
 
@@ -533,7 +506,7 @@ struct SidebarRowView: View {
     @State private var isHovered = false
     
     private var horizontalPadding: CGFloat {
-        return 32 + CGFloat(indentLevel - 1) * 16
+        return 16 + CGFloat(indentLevel) * 16 // Base 16 + 16 per level
     }
     
     var body: some View {
@@ -615,7 +588,7 @@ struct SidebarTabRowView: View {
                 .opacity(isHovered ? 1.0 : 0.7)
             }
         }
-        .padding(.horizontal, 32)
+        .padding(.horizontal, 32) // Level 1 indentation under TABS
         .padding(.vertical, 6)
         .background(
             Rectangle()
