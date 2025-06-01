@@ -75,17 +75,19 @@ struct BrowserView: View {
             }
             .navigationTitle("")
             .toolbar {
-                // Always show navigation controls, but disable when not applicable
+                // Compact navigation controls to prevent overflow
                 ToolbarItemGroup(placement: .navigation) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 4) {
                         Button(action: {
                             if let webView = getCurrentWebView() {
                                 webView.goBack()
                             }
                         }) {
                             Image(systemName: "chevron.left")
+                                .font(.system(size: 14))
                         }
                         .disabled(!(getCurrentTab()?.canGoBack ?? false) || !isWebContentActive())
+                        .frame(width: 24, height: 24)
                         
                         Button(action: {
                             if let webView = getCurrentWebView() {
@@ -93,8 +95,10 @@ struct BrowserView: View {
                             }
                         }) {
                             Image(systemName: "chevron.right")
+                                .font(.system(size: 14))
                         }
                         .disabled(!(getCurrentTab()?.canGoForward ?? false) || !isWebContentActive())
+                        .frame(width: 24, height: 24)
                         
                         Button(action: {
                             if let webView = getCurrentWebView() {
@@ -106,12 +110,15 @@ struct BrowserView: View {
                             }
                         }) {
                             Image(systemName: getCurrentTab()?.isLoading == true ? "xmark" : "arrow.clockwise")
+                                .font(.system(size: 14))
                         }
                         .disabled(!isWebContentActive())
+                        .frame(width: 24, height: 24)
                     }
+                    .frame(maxWidth: 80) // Constrain navigation group width
                 }
                 
-                // Always show address bar in center of title bar
+                // URL bar with priority layout and minimum width
                 ToolbarItem(placement: .principal) {
                     TextField("Enter URL or search", text: $addressText)
                         .textFieldStyle(.roundedBorder)
@@ -125,6 +132,8 @@ struct BrowserView: View {
                             }
                         }
                         .disabled(!isWebContentActive())
+                        .frame(minWidth: 300, maxWidth: 300) // Prevent infinite expansion
+                        .layoutPriority(1) // Give URL bar layout priority
                 }
             }
         }
