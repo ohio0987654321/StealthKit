@@ -2,7 +2,7 @@
 //  WindowCloaking.swift
 //  SwiftBrowser
 //
-//  Provides screen capture evasion functionality for StealthKit windows.
+//  Provides screen capture evasion functionality for xafari windows.
 //  This class implements window cloaking features that make windows invisible
 //  to screenshot tools and screen recording software.
 //
