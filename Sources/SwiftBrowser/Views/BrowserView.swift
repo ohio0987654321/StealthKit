@@ -13,15 +13,18 @@ import AppKit
 
 enum SidebarItem: Hashable {
     case settingsSection
+    case settingsBrowserUtilities
     case settingsSearchEngine
-    case settingsStealth
+    case settingsWindowUtilities
+    case settingsScreenRecording
+    case settingsAlwaysOnTop
     case tabsSection
     case tab(UUID)
 }
 
 enum ContentType {
     case settingsSearchEngine
-    case settingsStealth
+    case settingsWindowUtilities
     case webTab(Tab)
     case welcome
 }
@@ -51,8 +54,8 @@ struct BrowserView: View {
                 switch currentContent {
                 case .settingsSearchEngine:
                     SettingsSearchEngineView()
-                case .settingsStealth:
-                    SettingsStealthView()
+                case .settingsWindowUtilities:
+                    SettingsWindowUtilitiesView()
                 case .webTab(let tab):
                     WebView(
                         tab: .constant(tab),
@@ -180,8 +183,8 @@ struct BrowserView: View {
         case .settingsSearchEngine:
             currentContent = .settingsSearchEngine
             currentWebView = nil
-        case .settingsStealth:
-            currentContent = .settingsStealth
+        case .settingsWindowUtilities, .settingsScreenRecording, .settingsAlwaysOnTop:
+            currentContent = .settingsWindowUtilities
             currentWebView = nil
         case .tab(let tabId):
             if let tab = viewModel.tabs.first(where: { $0.id == tabId }) {
@@ -450,18 +453,18 @@ struct SidebarSectionHeader: View {
 struct SidebarSettingsItems: View {
     @Binding var selectedItem: SidebarItem?
     let onSelectionChange: (SidebarItem) -> Void
-    @State private var generalGroupExpanded = true
-    @State private var extensionsGroupExpanded = true
+    @State private var browserUtilitiesExpanded = true
+    @State private var windowUtilitiesExpanded = true
     
     var body: some View {
         VStack(spacing: 0) {
-            // General Group Header (non-clickable)
+            // Browser Utilities Group Header
             SidebarGroupHeaderView(
-                title: "General",
-                isExpanded: $generalGroupExpanded
+                title: "Browser Utilities",
+                isExpanded: $browserUtilitiesExpanded
             )
             
-            if generalGroupExpanded {
+            if browserUtilitiesExpanded {
                 SidebarRowView(
                     icon: "magnifyingglass",
                     title: "Search Engine",
@@ -471,18 +474,26 @@ struct SidebarSettingsItems: View {
                 )
             }
             
-            // Extensions Group Header (non-clickable)
+            // Window Utilities Group Header
             SidebarGroupHeaderView(
-                title: "Extensions",
-                isExpanded: $extensionsGroupExpanded
+                title: "Window Utilities",
+                isExpanded: $windowUtilitiesExpanded
             )
             
-            if extensionsGroupExpanded {
+            if windowUtilitiesExpanded {
                 SidebarRowView(
-                    icon: "eye.slash",
-                    title: "Stealth",
-                    isSelected: selectedItem == .settingsStealth,
-                    onSelect: { onSelectionChange(.settingsStealth) },
+                    icon: "rectangle.on.rectangle",
+                    title: "Screen Recording Bypass",
+                    isSelected: selectedItem == .settingsScreenRecording,
+                    onSelect: { onSelectionChange(.settingsScreenRecording) },
+                    indentLevel: 2
+                )
+                
+                SidebarRowView(
+                    icon: "pin",
+                    title: "Always on Top",
+                    isSelected: selectedItem == .settingsAlwaysOnTop,
+                    onSelect: { onSelectionChange(.settingsAlwaysOnTop) },
                     indentLevel: 2
                 )
             }
@@ -708,25 +719,25 @@ struct SettingsSearchEngineView: View {
     }
 }
 
-struct SettingsStealthView: View {
-    @State private var stealthManager = StealthManager.shared
+struct SettingsWindowUtilitiesView: View {
+    @State private var windowUtilityManager = StealthManager.shared
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Stealth Extension")
+                Text("Window Utilities")
                     .font(.title2)
                     .fontWeight(.semibold)
                 
-                Text("Configure stealth features for enhanced privacy and screen recording bypass.")
+                Text("Configure window management features and privacy utilities.")
                     .foregroundColor(.secondary)
                 
                 VStack(alignment: .leading, spacing: 16) {
                     GroupBox("Screen Recording Bypass") {
                         VStack(alignment: .leading, spacing: 8) {
                             Toggle("NSPanel Window Cloaking", isOn: Binding(
-                                get: { stealthManager.isWindowCloakingEnabled },
-                                set: { stealthManager.setWindowCloakingEnabled($0) }
+                                get: { windowUtilityManager.isWindowCloakingEnabled },
+                                set: { windowUtilityManager.setWindowCloakingEnabled($0) }
                             ))
                             Text("Makes browser windows invisible to screen recording and screenshot tools")
                                 .font(.caption)
@@ -738,8 +749,8 @@ struct SettingsStealthView: View {
                     GroupBox("Window Behavior") {
                         VStack(alignment: .leading, spacing: 8) {
                             Toggle("Always on Top", isOn: Binding(
-                                get: { stealthManager.isAlwaysOnTop },
-                                set: { stealthManager.setAlwaysOnTop($0) }
+                                get: { windowUtilityManager.isAlwaysOnTop },
+                                set: { windowUtilityManager.setAlwaysOnTop($0) }
                             ))
                             Text("Keep browser window above all other windows")
                                 .font(.caption)
