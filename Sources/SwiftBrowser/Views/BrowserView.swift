@@ -65,11 +65,14 @@ struct BrowserView: View {
                             currentWebView = webView
                         }
                     )
+                    .id(tab.id) // Force WebView recreation for each tab
                 case .welcome:
                     WelcomeView(onCreateNewTab: {
                         let newTab = viewModel.createNewTab()
                         selectedSidebarItem = .tab(newTab.id)
                         currentContent = .webTab(newTab)
+                        currentWebView = nil
+                        addressText = ""
                     })
                 }
             }
@@ -184,6 +187,8 @@ struct BrowserView: View {
             if let tab = viewModel.tabs.first(where: { $0.id == tabId }) {
                 currentContent = .webTab(tab)
                 viewModel.selectTab(at: viewModel.tabs.firstIndex(where: { $0.id == tabId }) ?? 0)
+                // Update address bar to show tab's URL
+                addressText = tab.url?.absoluteString ?? ""
                 // currentWebView will be updated when WebView is created
             }
         default:
@@ -245,6 +250,8 @@ struct BrowserView: View {
             let newTab = viewModel.createNewTab()
             selectedSidebarItem = .tab(newTab.id)
             currentContent = .webTab(newTab)
+            currentWebView = nil
+            addressText = ""
         }
         
         NotificationCenter.default.addObserver(
@@ -291,11 +298,13 @@ struct BrowserView: View {
                 if viewModel.tabs.isEmpty {
                     selectedSidebarItem = nil
                     currentContent = .welcome
+                    addressText = ""
                 } else {
                     let newIndex = min(index, viewModel.tabs.count - 1)
                     let newTab = viewModel.tabs[newIndex]
                     selectedSidebarItem = .tab(newTab.id)
                     currentContent = .webTab(newTab)
+                    addressText = newTab.url?.absoluteString ?? ""
                     viewModel.selectTab(at: newIndex)
                 }
             }
@@ -325,6 +334,7 @@ struct BrowserView: View {
                     let newTab = viewModel.tabs[newIndex]
                     selectedSidebarItem = .tab(newTab.id)
                     currentContent = .webTab(newTab)
+                    addressText = newTab.url?.absoluteString ?? ""
                     viewModel.selectTab(at: newIndex)
                 }
             }

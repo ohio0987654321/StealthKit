@@ -39,10 +39,11 @@ struct WebView: NSViewRepresentable {
     func updateNSView(_ nsView: WKWebView, context: Context) {
         context.coordinator.tab = tab
         
-        // Only load URL if it's genuinely different from current URL
+        // Only load URL if tab has a URL and it's different from current URL
         if let url = tab.url, nsView.url != url {
             nsView.load(URLRequest(url: url))
         }
+        // Note: New tab page loading is handled by makeNSView, not here
     }
     
     func makeCoordinator() -> WebViewCoordinator {
