@@ -1,11 +1,3 @@
-//
-//  StealthManager.swift
-//  SwiftBrowser
-//
-//  Central coordinator for all stealth functionality.
-//  Manages window cloaking and privacy features.
-//
-
 import Foundation
 import AppKit
 import WebKit
@@ -22,15 +14,10 @@ class StealthManager {
         initializeStealthFeatures()
     }
     
-    // MARK: - Initialization
-    
     func initializeStealthFeatures() {
-        // Apply default stealth settings safely
         if isWindowCloakingEnabled {
             setWindowCloakingEnabled(true)
         }
-        
-        print("StealthManager initialized successfully")
     }
     
     // MARK: - Window Management

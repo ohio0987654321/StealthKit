@@ -1,29 +1,13 @@
-//
-//  WindowCloaking.swift
-//  SwiftBrowser
-//
-//  Provides screen capture evasion functionality for xafari windows.
-//  This class implements window cloaking features that make windows invisible
-//  to screenshot tools and screen recording software.
-//
-
 import Foundation
 import AppKit
 import WebKit
 
 class WindowCloaking {
     
-    // MARK: - Window Cloaking
-    
     static func applyCloakingToWindow(_ window: NSWindow) {
-        // Apply comprehensive cloaking configuration
         configureStealthCollectionBehavior(window)
         applyStealthWindowLevel(window)
         configureAdvancedStealth(window)
-        
-        #if DEBUG
-        logStealthStatus(window)
-        #endif
     }
     
     static func removeCloakingFromWindow(_ window: NSWindow) {
@@ -127,18 +111,6 @@ class WindowCloaking {
         return dataStore
     }
     
-    // MARK: - Debugging and Logging
-    
-    static func logStealthStatus(_ window: NSWindow) {
-        print("=== Window Stealth Status ===")
-        print("Window Number: \(window.windowNumber)")
-        print("Collection Behavior: \(window.collectionBehavior.rawValue)")
-        print("Window Level: \(window.level.rawValue)")
-        print("Sharing Type: \(window.sharingType.rawValue)")
-        print("Has Shadow: \(window.hasShadow)")
-        print("Animation Behavior: \(window.animationBehavior.rawValue)")
-        print("===========================")
-    }
 }
 
 // MARK: - Stealth Window Delegate

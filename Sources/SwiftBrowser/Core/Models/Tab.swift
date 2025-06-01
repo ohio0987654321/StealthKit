@@ -1,17 +1,5 @@
-//
-//  Tab.swift
-//  SwiftBrowser
-//
-//  Data model representing a browser tab with its state and content.
-//
-
 import Foundation
 import WebKit
-
-enum TabType {
-    case web
-    case settings
-}
 
 @Observable
 class Tab: Identifiable {
@@ -22,7 +10,6 @@ class Tab: Identifiable {
     var canGoBack: Bool = false
     var canGoForward: Bool = false
     var estimatedProgress: Double = 0.0
-    var type: TabType = .web
     
     init(url: URL? = nil) {
         self.url = url
@@ -34,7 +21,6 @@ class Tab: Identifiable {
     func updateFromWebView(_ webView: WKWebView) {
         self.title = webView.title ?? "New Tab"
         
-        // Don't sync unwanted URLs (about:blank, data: URLs from custom new tab pages)
         if let webViewURL = webView.url,
            !webViewURL.absoluteString.hasPrefix("about:") &&
            !webViewURL.absoluteString.hasPrefix("data:") {
@@ -45,12 +31,5 @@ class Tab: Identifiable {
         self.canGoBack = webView.canGoBack
         self.canGoForward = webView.canGoForward
         self.estimatedProgress = webView.estimatedProgress
-    }
-    
-    static func settingsTab() -> Tab {
-        let tab = Tab()
-        tab.title = "Settings"
-        tab.type = .settings
-        return tab
     }
 }

@@ -1,11 +1,3 @@
-//
-//  BrowserViewModel.swift
-//  SwiftBrowser
-//
-//  Main browser application state management using MVVM pattern.
-//  Coordinates tabs, navigation, and overall browser functionality.
-//
-
 import Foundation
 import SwiftUI
 import WebKit
@@ -20,18 +12,11 @@ class BrowserViewModel {
         return tabs[currentTabIndex]
     }
     
-    init() {
-        // Start with no tabs - show native welcome state instead
-    }
+    init() {}
     
     @discardableResult
     func createNewTab(with url: URL? = nil) -> Tab {
-        return createNewWebTab(with: url)
-    }
-    
-    @discardableResult
-    func createNewSettingsTab() -> Tab {
-        let newTab = Tab.settingsTab()
+        let newTab = Tab(url: url)
         tabs.append(newTab)
         currentTabIndex = tabs.count - 1
         return newTab
@@ -39,16 +24,11 @@ class BrowserViewModel {
     
     @discardableResult
     func createNewWebTab(with url: URL? = nil) -> Tab {
-        let newTab = Tab(url: url)
-        tabs.append(newTab)
-        currentTabIndex = tabs.count - 1
-        return newTab
+        return createNewTab(with: url)
     }
     
     func closeTab(at index: Int) {
         guard index >= 0 && index < tabs.count else { return }
-        
-        // Tab cleanup - no cache to manage
         
         tabs.remove(at: index)
         
@@ -86,7 +66,6 @@ class BrowserViewModel {
     
     func moveTab(from source: IndexSet, to destination: Int) {
         tabs.move(fromOffsets: source, toOffset: destination)
-        // Update current tab index if necessary
         if let sourceIndex = source.first {
             if sourceIndex == currentTabIndex {
                 if destination > sourceIndex {

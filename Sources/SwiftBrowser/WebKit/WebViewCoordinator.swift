@@ -1,15 +1,5 @@
-//
-//  WebViewCoordinator.swift
-//  SwiftBrowser
-//
-//  SwiftUI-WebKit bridge coordinator.
-//  Handles WebKit integration and delegate methods for browser functionality.
-//
-
 import SwiftUI
 import WebKit
-
-// Simplified WebView creation - no caching
 
 struct WebView: NSViewRepresentable {
     @Binding var tab: Tab

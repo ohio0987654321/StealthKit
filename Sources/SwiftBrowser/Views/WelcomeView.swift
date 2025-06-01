@@ -1,10 +1,3 @@
-//
-//  WelcomeView.swift
-//  SwiftBrowser
-//
-//  Native SwiftUI welcome screen shown when no tabs are open.
-//
-
 import SwiftUI
 
 struct WelcomeView: View {

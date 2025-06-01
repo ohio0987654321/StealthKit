@@ -1,11 +1,3 @@
-//
-//  SwiftBrowserApp.swift
-//  SwiftBrowser
-//
-//  SwiftUI app entry point for modern browser implementation.
-//  Replaces the Objective-C AppDelegate pattern.
-//
-
 import SwiftUI
 
 @main
@@ -14,7 +6,6 @@ struct SwiftBrowserApp: App {
         WindowGroup {
             BrowserView()
                 .onAppear {
-                    // Initialize stealth features after UI is ready
                     DispatchQueue.main.async {
                         _ = StealthManager.shared
                     }
@@ -27,8 +18,6 @@ struct SwiftBrowserApp: App {
         }
     }
 }
-
-// Browser keyboard shortcuts and menu commands
 struct BrowserCommands: Commands {
     var body: some Commands {
         CommandGroup(after: .newItem) {
