@@ -21,7 +21,19 @@ struct BrowserView: View {
             )
             .navigationSplitViewColumnWidth(min: 250, ideal: 280, max: 350)
         } detail: {
-            ZStack {
+            VStack(spacing: 0) {
+                // Tab bar
+                if !viewModel.tabs.isEmpty {
+                    TabBarView(
+                        tabs: viewModel.tabs,
+                        selectedTabId: getCurrentTab()?.id,
+                        onTabSelect: handleTabSelection,
+                        onTabClose: handleCloseSpecificTab
+                    )
+                }
+                
+                // Main content area
+                ZStack {
                 switch currentContent {
                 case .settingsSearchEngine:
                     SettingsSearchEngineView()
@@ -89,22 +101,34 @@ struct BrowserView: View {
                 }
                 
                 ToolbarItem(placement: .principal) {
-                    TextField("Enter URL or search", text: $addressText)
-                        .textFieldStyle(.roundedBorder)
-                        .font(UITheme.Typography.addressBar)
-                        .focused($isAddressBarFocused)
-                        .onSubmit {
-                            handleAddressSubmit()
-                        }
-                        .onChange(of: getCurrentTab()?.url) { _, newURL in
-                            if !isAddressBarFocused && isWebContentActive() {
-                                addressText = newURL?.absoluteString ?? ""
+                    HStack(spacing: UITheme.Spacing.small) {
+                        TextField("Enter URL or search", text: $addressText)
+                            .textFieldStyle(.roundedBorder)
+                            .font(UITheme.Typography.addressBar)
+                            .focused($isAddressBarFocused)
+                            .onSubmit {
+                                handleAddressSubmit()
                             }
+                            .onChange(of: getCurrentTab()?.url) { _, newURL in
+                                if !isAddressBarFocused && isWebContentActive() {
+                                    addressText = newURL?.absoluteString ?? ""
+                                }
+                            }
+                            .frame(minWidth: 300, maxWidth: 300)
+                            .layoutPriority(1)
+                        
+                        ThemedToolbarButton(
+                            icon: "plus"
+                        ) {
+                            let newTab = viewModel.createNewTab()
+                            selectedSidebarItem = .tab(newTab.id)
+                            currentContent = .webTab(newTab)
+                            currentWebView = nil
+                            addressText = ""
                         }
-
-                        .frame(minWidth: 300, maxWidth: 300)
-                        .layoutPriority(1)
+                    }
                 }
+            }
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
@@ -140,6 +164,15 @@ struct BrowserView: View {
             return true
         }
         return false
+    }
+    
+    private func handleTabSelection(_ tabId: UUID) {
+        if let tab = viewModel.tabs.first(where: { $0.id == tabId }) {
+            selectedSidebarItem = .tab(tabId)
+            currentContent = .webTab(tab)
+            viewModel.selectTab(at: viewModel.tabs.firstIndex(where: { $0.id == tabId }) ?? 0)
+            addressText = tab.url?.absoluteString ?? ""
+        }
     }
     
     private func handleSidebarSelection(_ item: SidebarItem) {

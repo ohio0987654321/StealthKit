@@ -20,7 +20,6 @@ struct HierarchicalSidebarView: View {
     let onCloseTab: (Tab) -> Void
     
     @State private var settingsExpanded = true
-    @State private var tabsExpanded = true
     
     var body: some View {
         ScrollView {
@@ -35,27 +34,6 @@ struct HierarchicalSidebarView: View {
                     SidebarSettingsItems(
                         selectedItem: $selectedItem,
                         onSelectionChange: onSelectionChange
-                    )
-                }
-                
-                SidebarSectionHeader(
-                    title: "TABS",
-                    icon: "folder",
-                    isExpanded: $tabsExpanded,
-                    hasAddButton: true,
-                    onAdd: {
-                        let newTab = viewModel.createNewTab()
-                        selectedItem = .tab(newTab.id)
-                        onSelectionChange(.tab(newTab.id))
-                    }
-                )
-                
-                if tabsExpanded {
-                    SidebarTabItems(
-                        tabs: viewModel.tabs,
-                        selectedItem: $selectedItem,
-                        onSelectionChange: onSelectionChange,
-                        onCloseTab: onCloseTab
                     )
                 }
             }
@@ -140,31 +118,6 @@ struct SidebarSettingsItems: View {
     }
 }
 
-struct SidebarTabItems: View {
-    let tabs: [Tab]
-    @Binding var selectedItem: SidebarItem?
-    let onSelectionChange: (SidebarItem) -> Void
-    let onCloseTab: (Tab) -> Void
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            ForEach(tabs) { tab in
-                SidebarTabRowView(
-                    tab: tab,
-                    isSelected: selectedItem == .tab(tab.id),
-                    onSelect: { onSelectionChange(.tab(tab.id)) },
-                    onClose: { onCloseTab(tab) }
-                )
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: UITheme.CornerRadius.card))
-        .padding(.horizontal, 8)
-        .padding(.bottom, 8)
-    }
-}
-
-
-
 struct SidebarRowView: View {
     let icon: String
     let title: String
@@ -209,87 +162,6 @@ struct SidebarRowView: View {
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
-            }
-        }
-    }
-}
-
-struct SidebarTabRowView: View {
-    let tab: Tab
-    let isSelected: Bool
-    let onSelect: () -> Void
-    let onClose: () -> Void
-    @State private var isHovered = false
-    
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "globe")
-                .foregroundColor(.secondary)
-                .frame(width: 16, height: 16)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(tab.title.isEmpty ? "New Tab" : tab.title)
-                    .font(.system(size: 13))
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                
-                if let url = tab.url {
-                    Text(url.host ?? url.absoluteString)
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-            }
-            
-            Spacer()
-            
-            if isHovered || isSelected {
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .frame(width: 16, height: 16)
-                .opacity(isHovered ? 1.0 : 0.7)
-            }
-        }
-        .padding(.horizontal, 32)
-        .padding(.vertical, 6)
-        .background(
-            Rectangle()
-                .fill(isSelected ? Color.accentColor.opacity(0.15) : (isHovered ? Color(.controlAccentColor).opacity(0.05) : Color.clear))
-        )
-        .overlay(
-            Rectangle()
-                .fill(isSelected ? Color.accentColor : Color.clear)
-                .frame(width: 3),
-            alignment: .leading
-        )
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onSelect()
-        }
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
-        .contextMenu {
-            Button("Close Tab") {
-                onClose()
-            }
-            
-            Button("Duplicate Tab") {
-                
-            }
-            
-            Divider()
-            
-            Button("Close Other Tabs") {
-                
             }
         }
     }
