@@ -4,6 +4,25 @@ import WebKit
 
 class WindowCloaking {
     
+    // MARK: - Window Transparency
+    
+    static func setWindowTransparency(_ window: NSWindow, alpha: Double) {
+        let clampedAlpha = max(0.1, min(1.0, alpha))
+        window.alphaValue = clampedAlpha
+        
+        // If making window more transparent, also add background material
+        if clampedAlpha < 1.0 {
+            window.backgroundColor = NSColor.clear
+            window.isOpaque = false
+        } else {
+            window.isOpaque = true
+        }
+    }
+    
+    static func getWindowTransparency(_ window: NSWindow) -> Double {
+        return window.alphaValue
+    }
+    
     static func applyCloakingToWindow(_ window: NSWindow) {
         configureStealthCollectionBehavior(window)
         applyStealthWindowLevel(window)

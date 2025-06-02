@@ -59,14 +59,50 @@ struct SettingsWindowUtilitiesView: View {
                     }
                     
                     GroupBox("Window Behavior") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Toggle("Always on Top", isOn: Binding(
-                                get: { windowUtilityManager.isAlwaysOnTop },
-                                set: { windowUtilityManager.setAlwaysOnTop($0) }
-                            ))
-                            Text("Keep browser window above all other windows")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                        VStack(alignment: .leading, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Toggle("Always on Top", isOn: Binding(
+                                    get: { windowUtilityManager.isAlwaysOnTop },
+                                    set: { windowUtilityManager.setAlwaysOnTop($0) }
+                                ))
+                                Text("Keep browser window above all other windows")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Divider()
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Toggle("Window Transparency", isOn: Binding(
+                                    get: { windowUtilityManager.isWindowTransparencyEnabled },
+                                    set: { windowUtilityManager.setWindowTransparencyEnabled($0) }
+                                ))
+                                Text("Make the browser window semi-transparent")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                
+                                if windowUtilityManager.isWindowTransparencyEnabled {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack {
+                                            Text("Transparency Level")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                            Spacer()
+                                            Text("\(Int((1.0 - windowUtilityManager.windowTransparencyLevel) * 100))%")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                        Slider(
+                                            value: Binding(
+                                                get: { 1.0 - windowUtilityManager.windowTransparencyLevel },
+                                                set: { windowUtilityManager.setWindowTransparencyLevel(1.0 - $0) }
+                                            ),
+                                            in: 0.1...0.9
+                                        )
+                                    }
+                                    .padding(.top, 4)
+                                }
+                            }
                         }
                         .padding(.vertical, 4)
                     }

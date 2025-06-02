@@ -66,7 +66,7 @@ struct HierarchicalSidebarView: View {
             }
         }
         .navigationTitle("")
-        .background(Color(.controlBackgroundColor))
+        .background(.regularMaterial, in: Rectangle())
     }
 }
 
@@ -115,7 +115,6 @@ struct SidebarSectionHeader: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(Color(.controlBackgroundColor))
     }
 }
 
@@ -217,7 +216,6 @@ struct SidebarGroupHeaderView: View {
         }
         .padding(.horizontal, 32)
         .padding(.vertical, 4)
-        .background(Color(.controlBackgroundColor))
     }
 }
 

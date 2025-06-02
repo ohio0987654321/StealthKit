@@ -20,6 +20,7 @@ struct BrowserView: View {
                 onCloseTab: handleCloseSpecificTab
             )
             .navigationSplitViewColumnWidth(min: 250, ideal: 280, max: 350)
+            .background(.regularMaterial, in: Rectangle())
         } detail: {
             ZStack {
                 switch currentContent {
@@ -50,20 +51,24 @@ struct BrowserView: View {
                     })
                 }
             }
+            .background(.ultraThinMaterial, in: Rectangle())
             .navigationTitle("")
             .toolbar {
                 ToolbarItemGroup(placement: .navigation) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         Button(action: {
                             if let webView = getCurrentWebView() {
                                 webView.goBack()
                             }
                         }) {
                             Image(systemName: "chevron.left")
-                                .font(.system(size: 14))
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(.primary)
                         }
+                        .buttonStyle(.borderless)
                         .disabled(!(getCurrentTab()?.canGoBack ?? false) || !isWebContentActive())
-                        .frame(width: 24, height: 24)
+                        .frame(width: 28, height: 28)
+                        .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
                         
                         Button(action: {
                             if let webView = getCurrentWebView() {
@@ -71,10 +76,13 @@ struct BrowserView: View {
                             }
                         }) {
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 14))
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(.primary)
                         }
+                        .buttonStyle(.borderless)
                         .disabled(!(getCurrentTab()?.canGoForward ?? false) || !isWebContentActive())
-                        .frame(width: 24, height: 24)
+                        .frame(width: 28, height: 28)
+                        .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
                         
                         Button(action: {
                             if let webView = getCurrentWebView() {
@@ -86,12 +94,14 @@ struct BrowserView: View {
                             }
                         }) {
                             Image(systemName: getCurrentTab()?.isLoading == true ? "xmark" : "arrow.clockwise")
-                                .font(.system(size: 14))
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(.primary)
                         }
+                        .buttonStyle(.borderless)
                         .disabled(!isWebContentActive())
-                        .frame(width: 24, height: 24)
+                        .frame(width: 28, height: 28)
+                        .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
                     }
-                    .frame(maxWidth: 80)
                 }
                 
                 ToolbarItem(placement: .principal) {

@@ -9,6 +9,8 @@ class StealthManager {
     var isStealthModeActive: Bool = true
     var isWindowCloakingEnabled: Bool = true
     var isAlwaysOnTop: Bool = false
+    var isWindowTransparencyEnabled: Bool = false
+    var windowTransparencyLevel: Double = 0.9
     
     private init() {
         initializeStealthFeatures()
@@ -75,6 +77,32 @@ class StealthManager {
                     window.level = .floating
                 } else {
                     window.level = .normal
+                }
+            }
+        }
+    }
+    
+    // MARK: - Window Transparency Management
+    
+    func setWindowTransparencyEnabled(_ enabled: Bool) {
+        isWindowTransparencyEnabled = enabled
+        applyTransparencyToAllWindows()
+    }
+    
+    func setWindowTransparencyLevel(_ level: Double) {
+        windowTransparencyLevel = level
+        if isWindowTransparencyEnabled {
+            applyTransparencyToAllWindows()
+        }
+    }
+    
+    private func applyTransparencyToAllWindows() {
+        for window in NSApp.windows {
+            if !window.isKind(of: NSPanel.self) {
+                if isWindowTransparencyEnabled {
+                    WindowCloaking.setWindowTransparency(window, alpha: windowTransparencyLevel)
+                } else {
+                    WindowCloaking.setWindowTransparency(window, alpha: 1.0)
                 }
             }
         }
