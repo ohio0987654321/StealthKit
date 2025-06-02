@@ -97,11 +97,11 @@ struct BrowserView: View {
                             handleAddressSubmit()
                         }
                         .onChange(of: getCurrentTab()?.url) { _, newURL in
-                            if !isAddressBarFocused {
+                            if !isAddressBarFocused && isWebContentActive() {
                                 addressText = newURL?.absoluteString ?? ""
                             }
                         }
-                        .disabled(!isWebContentActive())
+
                         .frame(minWidth: 300, maxWidth: 300)
                         .layoutPriority(1)
                 }
