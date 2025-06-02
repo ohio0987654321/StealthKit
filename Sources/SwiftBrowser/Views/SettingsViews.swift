@@ -33,6 +33,7 @@ struct SettingsSearchEngineView: View {
 
 struct SettingsWindowUtilitiesView: View {
     @State private var windowUtilityManager = StealthManager.shared
+    @State private var windowManager = WindowManager.shared
     
     var body: some View {
         ScrollView {
@@ -72,104 +73,49 @@ struct SettingsWindowUtilitiesView: View {
                         }
                         .padding(.vertical, 4)
                     }
-                }
-            }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-}
-
-struct SettingsWindowTransparencyView: View {
-    @State private var windowManager = WindowManager.shared
-    
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text("Window Transparency")
-                    .font(UITheme.Typography.title)
-                
-                Text("Configure window transparency settings for privacy and visual customization.")
-                    .font(UITheme.Typography.body)
-                    .foregroundColor(UITheme.Colors.secondary)
-                
-                ThemedCard {
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Enable Window Transparency")
-                                    .font(UITheme.Typography.headline)
-                                Text("Make the browser window semi-transparent")
-                                    .font(UITheme.Typography.caption)
-                                    .foregroundColor(UITheme.Colors.secondary)
-                            }
-                            
-                            Spacer()
-                            
-                            Toggle("", isOn: $windowManager.isTranslucencyEnabled)
-                                .toggleStyle(SwitchToggleStyle())
-                        }
-                        
-                        if windowManager.isTranslucencyEnabled {
-                            Divider()
-                            
+                    
+                    GroupBox("Window Transparency") {
+                        VStack(alignment: .leading, spacing: 12) {
                             VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Text("Transparency Level")
-                                        .font(UITheme.Typography.headline)
-                                    Spacer()
-                                    Text("\(Int((1.0 - windowManager.translucencyLevel) * 100))%")
-                                        .font(UITheme.Typography.caption)
-                                        .foregroundColor(UITheme.Colors.secondary)
+                                Toggle("Enable Window Transparency", isOn: $windowManager.isTranslucencyEnabled)
+                                Text("Make the browser window semi-transparent")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            if windowManager.isTranslucencyEnabled {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Text("Transparency Level")
+                                            .font(.subheadline)
+                                        Spacer()
+                                        Text("\(Int((1.0 - windowManager.translucencyLevel) * 100))%")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    
+                                    Slider(
+                                        value: Binding(
+                                            get: { 1.0 - windowManager.translucencyLevel },
+                                            set: { windowManager.translucencyLevel = 1.0 - $0 }
+                                        ),
+                                        in: 0.1...0.7
+                                    ) {
+                                        Text("Transparency")
+                                    } minimumValueLabel: {
+                                        Text("10%")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    } maximumValueLabel: {
+                                        Text("70%")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
                                 }
-                                
-                                Slider(
-                                    value: Binding(
-                                        get: { 1.0 - windowManager.translucencyLevel },
-                                        set: { windowManager.translucencyLevel = 1.0 - $0 }
-                                    ),
-                                    in: 0.1...0.7
-                                ) {
-                                    Text("Transparency")
-                                } minimumValueLabel: {
-                                    Text("10%")
-                                        .font(UITheme.Typography.caption)
-                                        .foregroundColor(UITheme.Colors.secondary)
-                                } maximumValueLabel: {
-                                    Text("70%")
-                                        .font(UITheme.Typography.caption)
-                                        .foregroundColor(UITheme.Colors.secondary)
-                                }
-                                
-                                Text("Higher values make the window more transparent. Very high transparency may affect readability.")
-                                    .font(UITheme.Typography.caption)
-                                    .foregroundColor(UITheme.Colors.secondary)
                             }
                         }
+                        .padding(.vertical, 4)
                     }
-                    .padding(UITheme.Spacing.medium)
-                }
-                
-                ThemedCard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Important Notes")
-                            .font(UITheme.Typography.headline)
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label("Transparency affects the entire window frame, not web content", systemImage: "info.circle")
-                                .font(UITheme.Typography.body)
-                                .foregroundColor(UITheme.Colors.secondary)
-                            
-                            Label("Web content remains fully opaque for readability", systemImage: "eye")
-                                .font(UITheme.Typography.body)
-                                .foregroundColor(UITheme.Colors.secondary)
-                            
-                            Label("Changes apply immediately to all browser windows", systemImage: "rectangle.on.rectangle")
-                                .font(UITheme.Typography.body)
-                                .foregroundColor(UITheme.Colors.secondary)
-                        }
-                    }
-                    .padding(UITheme.Spacing.medium)
                 }
             }
             .padding()

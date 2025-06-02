@@ -27,8 +27,7 @@ struct BrowserView: View {
                     SettingsSearchEngineView()
                 case .settingsWindowUtilities:
                     SettingsWindowUtilitiesView()
-                case .settingsWindowTransparency:
-                    SettingsWindowTransparencyView()
+
                 case .webTab(let tab):
                     WebView(
                         tab: .constant(tab),
@@ -150,11 +149,8 @@ struct BrowserView: View {
         case .settingsSearchEngine:
             currentContent = .settingsSearchEngine
             currentWebView = nil
-        case .settingsWindowUtilities, .settingsScreenRecording, .settingsAlwaysOnTop:
+        case .settingsWindowUtilities, .settingsScreenRecording, .settingsAlwaysOnTop, .settingsWindowTransparency:
             currentContent = .settingsWindowUtilities
-            currentWebView = nil
-        case .settingsWindowTransparency:
-            currentContent = .settingsWindowTransparency
             currentWebView = nil
         case .tab(let tabId):
             if let tab = viewModel.tabs.first(where: { $0.id == tabId }) {

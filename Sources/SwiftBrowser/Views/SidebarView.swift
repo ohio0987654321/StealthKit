@@ -3,7 +3,6 @@ import SwiftUI
 enum ContentType {
     case settingsSearchEngine
     case settingsWindowUtilities
-    case settingsWindowTransparency
     case webTab(Tab)
     case welcome
 }
