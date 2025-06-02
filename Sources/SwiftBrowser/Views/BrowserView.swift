@@ -149,7 +149,7 @@ struct BrowserView: View {
         case .settingsSearchEngine:
             currentContent = .settingsSearchEngine
             currentWebView = nil
-        case .settingsWindowUtilities, .settingsScreenRecording, .settingsAlwaysOnTop, .settingsWindowTransparency:
+        case .settingsWindowUtilities:
             currentContent = .settingsWindowUtilities
             currentWebView = nil
         case .tab(let tabId):
@@ -158,9 +158,6 @@ struct BrowserView: View {
                 viewModel.selectTab(at: viewModel.tabs.firstIndex(where: { $0.id == tabId }) ?? 0)
                 addressText = tab.url?.absoluteString ?? ""
             }
-        default:
-            currentContent = .welcome
-            currentWebView = nil
         }
     }
     

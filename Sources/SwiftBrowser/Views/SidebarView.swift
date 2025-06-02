@@ -8,14 +8,8 @@ enum ContentType {
 }
 
 enum SidebarItem: Hashable {
-    case settingsSection
-    case settingsBrowserUtilities
     case settingsSearchEngine
     case settingsWindowUtilities
-    case settingsWindowTransparency
-    case settingsScreenRecording
-    case settingsAlwaysOnTop
-    case tabsSection
     case tab(UUID)
 }
 
@@ -121,56 +115,24 @@ struct SidebarSectionHeader: View {
 struct SidebarSettingsItems: View {
     @Binding var selectedItem: SidebarItem?
     let onSelectionChange: (SidebarItem) -> Void
-    @State private var browserUtilitiesExpanded = true
-    @State private var windowUtilitiesExpanded = true
     
     var body: some View {
         VStack(spacing: 0) {
-            SidebarGroupHeaderView(
-                title: "Browser Utilities",
-                isExpanded: $browserUtilitiesExpanded
+            SidebarRowView(
+                icon: "magnifyingglass",
+                title: "Search Engine",
+                isSelected: selectedItem == .settingsSearchEngine,
+                onSelect: { onSelectionChange(.settingsSearchEngine) },
+                indentLevel: 1
             )
             
-            if browserUtilitiesExpanded {
-                SidebarRowView(
-                    icon: "magnifyingglass",
-                    title: "Search Engine",
-                    isSelected: selectedItem == .settingsSearchEngine,
-                    onSelect: { onSelectionChange(.settingsSearchEngine) },
-                    indentLevel: 2
-                )
-            }
-            
-            SidebarGroupHeaderView(
+            SidebarRowView(
+                icon: "macwindow",
                 title: "Window Utilities",
-                isExpanded: $windowUtilitiesExpanded
+                isSelected: selectedItem == .settingsWindowUtilities,
+                onSelect: { onSelectionChange(.settingsWindowUtilities) },
+                indentLevel: 1
             )
-            
-            if windowUtilitiesExpanded {
-                SidebarRowView(
-                    icon: "square.dashed",
-                    title: "Window Transparency",
-                    isSelected: selectedItem == .settingsWindowTransparency,
-                    onSelect: { onSelectionChange(.settingsWindowTransparency) },
-                    indentLevel: 2
-                )
-                
-                SidebarRowView(
-                    icon: "rectangle.on.rectangle",
-                    title: "Screen Recording Bypass",
-                    isSelected: selectedItem == .settingsScreenRecording,
-                    onSelect: { onSelectionChange(.settingsScreenRecording) },
-                    indentLevel: 2
-                )
-                
-                SidebarRowView(
-                    icon: "pin",
-                    title: "Always on Top",
-                    isSelected: selectedItem == .settingsAlwaysOnTop,
-                    onSelect: { onSelectionChange(.settingsAlwaysOnTop) },
-                    indentLevel: 2
-                )
-            }
         }
         .clipShape(RoundedRectangle(cornerRadius: UITheme.CornerRadius.card))
         .padding(.horizontal, 8)
@@ -201,37 +163,7 @@ struct SidebarTabItems: View {
     }
 }
 
-struct SidebarGroupHeaderView: View {
-    let title: String
-    @Binding var isExpanded: Bool
-    
-    var body: some View {
-        HStack(spacing: 8) {
-            Button(action: {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isExpanded.toggle()
-                }
-            }) {
-                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 9))
-                    .foregroundColor(.secondary)
-                    .frame(width: 10, height: 10)
-            }
-            .buttonStyle(PlainButtonStyle())
-            
-            Text(title)
-                .font(.caption2)
-                .fontWeight(.medium)
-                .foregroundColor(.secondary)
-                .textCase(.uppercase)
-                .lineLimit(1)
-            
-            Spacer()
-        }
-        .padding(.horizontal, 32)
-        .padding(.vertical, 4)
-    }
-}
+
 
 struct SidebarRowView: View {
     let icon: String
