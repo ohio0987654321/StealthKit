@@ -66,19 +66,16 @@ class WindowManager {
     
     // MARK: - Unified Window Styling
     private func applyUnifiedStyling(to window: NSWindow) {
-        // Configure window appearance for native macOS look
-        window.titlebarAppearsTransparent = true
+        // Configure window appearance for native macOS look with proper material
+        window.titlebarAppearsTransparent = false  // Keep titlebar visible but styled
         window.titleVisibility = .hidden
         window.toolbarStyle = .unified
-        
-        // Enable vibrancy and translucency
-        window.backgroundColor = NSColor.clear
-        window.isOpaque = false
         
         // Configure window behavior
         window.hidesOnDeactivate = false
         window.canHide = true
         window.animationBehavior = .documentWindow
+        window.isOpaque = false
         
         // Set up window delegate for unified management
         if window.delegate == nil {
@@ -161,24 +158,35 @@ class WindowManager {
             view.identifier?.rawValue == "UnifiedMaterialBackground"
         }
         
-        // Create SwiftUI material background
-        let materialView = NSHostingView(rootView: 
-            Rectangle()
-                .fill(material.material)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
-        )
+        // Create NSVisualEffectView for proper material coverage including titlebar
+        let effectView = NSVisualEffectView()
+        effectView.identifier = NSUserInterfaceItemIdentifier("UnifiedMaterialBackground")
+        effectView.translatesAutoresizingMaskIntoConstraints = false
+        effectView.wantsLayer = true
         
-        materialView.identifier = NSUserInterfaceItemIdentifier("UnifiedMaterialBackground")
-        materialView.translatesAutoresizingMaskIntoConstraints = false
+        // Configure material based on UITheme material type
+        switch material {
+        case .content, .sidebar, .toolbar:
+            effectView.material = .titlebar  // Native titlebar material includes content area
+            effectView.blendingMode = .behindWindow
+        case .overlay:
+            effectView.material = .popover
+            effectView.blendingMode = .withinWindow
+        case .popup:
+            effectView.material = .menu
+            effectView.blendingMode = .withinWindow
+        }
         
-        contentView.addSubview(materialView, positioned: .below, relativeTo: nil)
+        effectView.state = .active
+        
+        // Add to content view with full coverage
+        contentView.addSubview(effectView, positioned: .below, relativeTo: nil)
         
         NSLayoutConstraint.activate([
-            materialView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            materialView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            materialView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            materialView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+            effectView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            effectView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            effectView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            effectView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
     }
     
