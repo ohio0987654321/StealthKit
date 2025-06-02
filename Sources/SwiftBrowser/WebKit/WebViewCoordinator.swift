@@ -7,15 +7,26 @@ struct WebView: NSViewRepresentable {
     let onWebViewCreated: ((WKWebView) -> Void)?
     
     func makeNSView(context: Context) -> WKWebView {
-        // Always create fresh WebView - no caching
+        // Reuse existing WebView if available, otherwise create new one
+        if let existingWebView = tab.webView {
+            existingWebView.navigationDelegate = context.coordinator
+            existingWebView.uiDelegate = context.coordinator
+            onWebViewCreated?(existingWebView)
+            return existingWebView
+        }
+        
+        // Create new WebView only if tab doesn't have one
         let webView = WKWebView()
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         
+        // Store WebView in tab for reuse
+        tab.webView = webView
+        
         // Notify parent about WebView creation
         onWebViewCreated?(webView)
         
-        // Load initial content
+        // Load initial content only for new WebViews
         if let url = tab.url {
             webView.load(URLRequest(url: url))
         } else {
@@ -29,11 +40,16 @@ struct WebView: NSViewRepresentable {
     func updateNSView(_ nsView: WKWebView, context: Context) {
         context.coordinator.tab = tab
         
-        // Only load URL if tab has a URL and it's different from current URL
-        if let url = tab.url, nsView.url != url {
+        // Only load URL if it's a programmatic navigation request
+        // and different from current URL (avoid reloads on tab switches)
+        if let url = tab.url, 
+           nsView.url != url,
+           !context.coordinator.isTabSwitch {
             nsView.load(URLRequest(url: url))
         }
-        // Note: New tab page loading is handled by makeNSView, not here
+        
+        // Reset tab switch flag
+        context.coordinator.isTabSwitch = false
     }
     
     func makeCoordinator() -> WebViewCoordinator {
@@ -45,6 +61,7 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
     var tab: Tab
     let onNavigationChange: (Tab) -> Void
     private var lastLoadedURL: URL?
+    var isTabSwitch: Bool = false
     
     init(tab: Tab, onNavigationChange: @escaping (Tab) -> Void) {
         self.tab = tab

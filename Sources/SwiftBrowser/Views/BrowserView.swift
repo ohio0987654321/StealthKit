@@ -261,6 +261,7 @@ struct BrowserView: View {
                 if viewModel.tabs.isEmpty {
                     selectedSidebarItem = nil
                     currentContent = .welcome
+                    currentWebView = nil
                     addressText = ""
                 } else {
                     let newIndex = min(index, viewModel.tabs.count - 1)
@@ -271,9 +272,8 @@ struct BrowserView: View {
                     viewModel.selectTab(at: newIndex)
                 }
             }
-        }
-        
-        if viewModel.tabs.isEmpty {
+        } else if case .welcome = currentContent {
+            // If we're on the Welcome page and Cmd+W is pressed, close the window
             if let window = NSApp.keyWindow {
                 window.close()
             }

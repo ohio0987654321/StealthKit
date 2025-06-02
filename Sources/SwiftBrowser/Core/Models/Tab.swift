@@ -10,6 +10,7 @@ class Tab: Identifiable {
     var canGoBack: Bool = false
     var canGoForward: Bool = false
     var estimatedProgress: Double = 0.0
+    var webView: WKWebView?
     
     init(url: URL? = nil) {
         self.url = url
@@ -31,5 +32,11 @@ class Tab: Identifiable {
         self.canGoBack = webView.canGoBack
         self.canGoForward = webView.canGoForward
         self.estimatedProgress = webView.estimatedProgress
+    }
+    
+    func cleanup() {
+        webView?.navigationDelegate = nil
+        webView?.uiDelegate = nil
+        webView = nil
     }
 }

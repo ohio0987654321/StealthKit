@@ -16,10 +16,6 @@ struct WelcomeView: View {
                     .font(.largeTitle)
                     .fontWeight(.light)
                     .foregroundColor(.primary)
-                
-                Text("A modern, privacy-focused browser")
-                    .font(.title3)
-                    .foregroundColor(.secondary)
             }
             
             VStack(spacing: 16) {

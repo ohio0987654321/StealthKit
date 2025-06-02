@@ -30,6 +30,8 @@ class BrowserViewModel {
     func closeTab(at index: Int) {
         guard index >= 0 && index < tabs.count else { return }
         
+        let tabToClose = tabs[index]
+        tabToClose.cleanup()
         tabs.remove(at: index)
         
         if !tabs.isEmpty {
