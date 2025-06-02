@@ -55,6 +55,15 @@ struct SettingsWindowUtilitiesView: View {
                             Text("Makes browser windows invisible to screen recording and screenshot tools")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                            
+                            Toggle("Pin to Current Desktop", isOn: Binding(
+                                get: { windowUtilityManager.isPinnedToCurrentDesktop },
+                                set: { windowUtilityManager.setPinnedToCurrentDesktop($0) }
+                            ))
+                            .disabled(!windowUtilityManager.isWindowCloakingEnabled)
+                            Text("When enabled, window stays on current virtual desktop only")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
                         .padding(.vertical, 4)
                     }
@@ -67,6 +76,17 @@ struct SettingsWindowUtilitiesView: View {
                                     set: { windowUtilityManager.setAlwaysOnTop($0) }
                                 ))
                                 Text("Keep browser window above all other windows")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Toggle("Hide window in Mission Control", isOn: Binding(
+                                    get: { windowUtilityManager.hideInMissionControl },
+                                    set: { windowUtilityManager.setHideInMissionControl($0) }
+                                ))
+                                .disabled(!windowUtilityManager.isAlwaysOnTop)
+                                Text("When Always on Top is enabled, hide window during Mission Control")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -112,6 +132,32 @@ struct SettingsWindowUtilitiesView: View {
                                             .foregroundColor(.secondary)
                                     }
                                 }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    
+                    GroupBox("Application Behavior") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Toggle("Accessory App Mode", isOn: Binding(
+                                    get: { windowUtilityManager.isAccessoryApp },
+                                    set: { windowUtilityManager.setAccessoryApp($0) }
+                                ))
+                                Text("App runs as accessory without appearing in Dock or menu bar when focused")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Toggle("Show Dock Icon", isOn: Binding(
+                                    get: { windowUtilityManager.showDockIcon },
+                                    set: { windowUtilityManager.setShowDockIcon($0) }
+                                ))
+                                .disabled(windowUtilityManager.isAccessoryApp)
+                                Text("When disabled, app won't appear in Dock (accessory mode overrides this)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             }
                         }
                         .padding(.vertical, 4)

@@ -12,6 +12,12 @@ class StealthManager {
     var isWindowTransparencyEnabled: Bool = false
     var windowTransparencyLevel: Double = 0.9
     
+    // New window utility settings
+    var isPinnedToCurrentDesktop: Bool = true
+    var hideInMissionControl: Bool = false
+    var isAccessoryApp: Bool = false
+    var showDockIcon: Bool = true
+    
     private init() {
         initializeStealthFeatures()
     }
@@ -26,7 +32,7 @@ class StealthManager {
     
     func applyStealthToWindow(_ window: NSWindow) {
         if isWindowCloakingEnabled {
-            WindowCloaking.applyCloakingToWindow(window)
+            WindowCloaking.applyCloakingToWindow(window, isPinnedToCurrentDesktop: isPinnedToCurrentDesktop)
         }
     }
     
@@ -37,7 +43,7 @@ class StealthManager {
     private func applyWindowCloakingToAllWindows() {
         for window in NSApp.windows {
             if isWindowCloakingEnabled {
-                WindowCloaking.applyCloakingToWindow(window)
+                WindowCloaking.applyCloakingToWindow(window, isPinnedToCurrentDesktop: isPinnedToCurrentDesktop)
             } else {
                 WindowCloaking.removeCloakingFromWindow(window)
             }
@@ -62,6 +68,12 @@ class StealthManager {
         isWindowCloakingEnabled = enabled
         applyWindowCloakingToAllWindows()
         
+        // IMPORTANT: After changing NSPanel setting, reapply Always on Top if it was enabled
+        // This fixes the bug where Always on Top breaks when NSPanel is toggled
+        if isAlwaysOnTop {
+            applyAlwaysOnTopToAllWindows()
+        }
+        
         // Sync with WindowManager
         WindowManager.shared.isCloakingEnabled = enabled
     }
@@ -80,7 +92,12 @@ class StealthManager {
         for window in NSApp.windows {
             if !window.isKind(of: NSPanel.self) {
                 if isAlwaysOnTop {
-                    window.level = .floating
+                    // Choose window level based on Mission Control visibility preference
+                    if hideInMissionControl {
+                        window.level = .floating  // Floating level hides in Mission Control
+                    } else {
+                        window.level = .statusBar  // StatusBar level stays visible in Mission Control
+                    }
                 } else {
                     window.level = .normal
                 }
@@ -113,6 +130,55 @@ class StealthManager {
                 } else {
                     WindowCloaking.setWindowTransparency(window, alpha: 1.0)
                 }
+            }
+        }
+    }
+    
+    // MARK: - New Window Utility Settings
+    
+    func setPinnedToCurrentDesktop(_ enabled: Bool) {
+        isPinnedToCurrentDesktop = enabled
+        applyWindowCloakingToAllWindows()
+        
+        // Update WindowManager to avoid circular dependency
+        WindowManager.shared.updatePinnedToCurrentDesktop(enabled)
+    }
+    
+    func setHideInMissionControl(_ enabled: Bool) {
+        hideInMissionControl = enabled
+        applyAlwaysOnTopToAllWindows()
+        
+        // Update WindowManager to avoid circular dependency
+        WindowManager.shared.updateHideInMissionControl(enabled)
+    }
+    
+    func setAccessoryApp(_ enabled: Bool) {
+        isAccessoryApp = enabled
+        applyAccessoryAppPolicy()
+    }
+    
+    func setShowDockIcon(_ enabled: Bool) {
+        showDockIcon = enabled
+        applyDockIconVisibility()
+    }
+    
+    private func applyAccessoryAppPolicy() {
+        if isAccessoryApp {
+            NSApp.setActivationPolicy(.accessory)
+        } else {
+            NSApp.setActivationPolicy(.regular)
+            // When switching back to regular, apply dock icon setting
+            applyDockIconVisibility()
+        }
+    }
+    
+    private func applyDockIconVisibility() {
+        // Only apply dock icon visibility when not in accessory mode
+        if !isAccessoryApp {
+            if showDockIcon {
+                NSApp.setActivationPolicy(.regular)
+            } else {
+                NSApp.setActivationPolicy(.prohibited)
             }
         }
     }

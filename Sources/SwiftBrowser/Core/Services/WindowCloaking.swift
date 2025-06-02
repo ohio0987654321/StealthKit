@@ -23,8 +23,8 @@ class WindowCloaking {
         return window.alphaValue
     }
     
-    static func applyCloakingToWindow(_ window: NSWindow) {
-        configureStealthCollectionBehavior(window)
+    static func applyCloakingToWindow(_ window: NSWindow, isPinnedToCurrentDesktop: Bool = true) {
+        configureStealthCollectionBehavior(window, isPinnedToCurrentDesktop: isPinnedToCurrentDesktop)
         applyStealthWindowLevel(window)
         configureAdvancedStealth(window)
     }
@@ -60,12 +60,15 @@ class WindowCloaking {
     
     // MARK: - Collection Behavior Configuration
     
-    static func configureStealthCollectionBehavior(_ window: NSWindow) {
+    static func configureStealthCollectionBehavior(_ window: NSWindow, isPinnedToCurrentDesktop: Bool = true) {
         // Configure window collection behavior for stealth operation
         var behavior: NSWindow.CollectionBehavior = []
         
         // Make window invisible to screen capture but preserve Mission Control behavior
-        behavior.insert(.canJoinAllSpaces)
+        // Check if pinned to current desktop setting is disabled
+        if !isPinnedToCurrentDesktop {
+            behavior.insert(.canJoinAllSpaces)
+        }
         
         // Exclude from screenshots and screen recordings
         if #available(macOS 11.0, *) {
@@ -130,6 +133,20 @@ class WindowCloaking {
         return dataStore
     }
     
+    // MARK: - Accessory Window Configuration
+    
+    static func applyAccessoryWindow(_ window: NSWindow) {
+        var behavior = window.collectionBehavior
+        behavior.insert(.auxiliary)
+        window.collectionBehavior = behavior
+    }
+    
+    static func removeAccessoryWindow(_ window: NSWindow) {
+        var behavior = window.collectionBehavior
+        behavior.remove(.auxiliary)
+        window.collectionBehavior = behavior
+    }
+    
 }
 
 // MARK: - Stealth Window Delegate
@@ -144,14 +161,16 @@ class StealthWindowDelegate: NSObject, NSWindowDelegate {
     func windowDidBecomeKey(_ notification: Notification) {
         // Ensure stealth properties are maintained when window becomes key
         if let window = notification.object as? NSWindow {
-            WindowCloaking.configureStealthCollectionBehavior(window)
+            let isPinnedToCurrentDesktop = StealthManager.shared.isPinnedToCurrentDesktop
+            WindowCloaking.configureStealthCollectionBehavior(window, isPinnedToCurrentDesktop: isPinnedToCurrentDesktop)
         }
     }
     
     func windowDidResignKey(_ notification: Notification) {
         // Maintain stealth properties when window loses key status
         if let window = notification.object as? NSWindow {
-            WindowCloaking.configureStealthCollectionBehavior(window)
+            let isPinnedToCurrentDesktop = StealthManager.shared.isPinnedToCurrentDesktop
+            WindowCloaking.configureStealthCollectionBehavior(window, isPinnedToCurrentDesktop: isPinnedToCurrentDesktop)
         }
     }
     

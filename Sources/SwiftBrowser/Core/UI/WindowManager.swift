@@ -30,6 +30,12 @@ class WindowManager {
         didSet { applyMaterialToAllWindows() }
     }
     
+
+    
+    // Store settings to avoid singleton access during initialization
+    private var currentIsPinnedToCurrentDesktop: Bool = true
+    private var currentHideInMissionControl: Bool = false
+    
     private init() {}
     
     // MARK: - Window Registration
@@ -117,7 +123,27 @@ class WindowManager {
     // MARK: - Always On Top Management
     private func setWindowAlwaysOnTop(_ window: NSWindow, enabled: Bool) {
         if !window.isKind(of: NSPanel.self) {
-            window.level = enabled ? .floating : .normal
+            if enabled {
+                // Choose window level based on Mission Control visibility preference
+                if currentHideInMissionControl {
+                    window.level = .floating  // Floating level hides in Mission Control
+                } else {
+                    // Use a level that stays visible in Mission Control
+                    window.level = .tornOffMenu  // This level stays visible in Mission Control
+                    // Also ensure collection behavior supports Mission Control visibility
+                    var behavior = window.collectionBehavior
+                    behavior.remove(.ignoresCycle)
+                    behavior.insert(.participatesInCycle)
+                    window.collectionBehavior = behavior
+                }
+            } else {
+                window.level = .normal
+                // Restore normal collection behavior
+                var behavior = window.collectionBehavior
+                behavior.remove(.ignoresCycle)
+                behavior.insert(.participatesInCycle)
+                window.collectionBehavior = behavior
+            }
         }
     }
     
@@ -130,7 +156,12 @@ class WindowManager {
     // MARK: - Cloaking Management
     private func applyCloaking(to window: NSWindow) {
         // Configure collection behavior for screen recording protection
-        var behavior: NSWindow.CollectionBehavior = [.canJoinAllSpaces]
+        var behavior: NSWindow.CollectionBehavior = []
+        
+        // Check if pinned to current desktop setting is disabled
+        if !currentIsPinnedToCurrentDesktop {
+            behavior.insert(.canJoinAllSpaces)
+        }
         
         if #available(macOS 11.0, *) {
             behavior.insert(.auxiliary)
@@ -206,6 +237,8 @@ class WindowManager {
         }
     }
     
+
+    
     // MARK: - Window Creation Helpers
     func createUnifiedWindow(
         contentRect: NSRect = NSRect(x: 100, y: 100, width: 1200, height: 800),
@@ -229,6 +262,11 @@ class WindowManager {
         translucencyLevel = stealthManager.windowTransparencyLevel
         isAlwaysOnTop = stealthManager.isAlwaysOnTop
         isCloakingEnabled = stealthManager.isWindowCloakingEnabled
+
+        
+        // Update private settings to avoid circular dependency
+        currentIsPinnedToCurrentDesktop = stealthManager.isPinnedToCurrentDesktop
+        currentHideInMissionControl = stealthManager.hideInMissionControl
     }
     
     func syncToStealthManager(_ stealthManager: StealthManager) {
@@ -236,6 +274,20 @@ class WindowManager {
         stealthManager.setWindowTransparencyLevel(translucencyLevel)
         stealthManager.setAlwaysOnTop(isAlwaysOnTop)
         stealthManager.setWindowCloakingEnabled(isCloakingEnabled)
+
+        stealthManager.setPinnedToCurrentDesktop(currentIsPinnedToCurrentDesktop)
+        stealthManager.setHideInMissionControl(currentHideInMissionControl)
+    }
+    
+    // Methods to update settings without triggering circular dependency
+    func updatePinnedToCurrentDesktop(_ enabled: Bool) {
+        currentIsPinnedToCurrentDesktop = enabled
+        applyCloakingToAllWindows()
+    }
+    
+    func updateHideInMissionControl(_ enabled: Bool) {
+        currentHideInMissionControl = enabled
+        applyAlwaysOnTopToAllWindows()
     }
 }
 
