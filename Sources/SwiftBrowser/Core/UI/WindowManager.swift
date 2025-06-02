@@ -1,0 +1,303 @@
+import SwiftUI
+import AppKit
+
+// MARK: - Unified Window Manager
+@Observable
+class WindowManager {
+    static let shared = WindowManager()
+    
+    // MARK: - Window State
+    private var managedWindows: Set<NSWindow> = []
+    
+    // MARK: - Window Properties
+    var isTranslucencyEnabled: Bool = true {
+        didSet { applyTranslucencyToAllWindows() }
+    }
+    
+    var translucencyLevel: Double = 0.95 {
+        didSet { applyTranslucencyToAllWindows() }
+    }
+    
+    var isAlwaysOnTop: Bool = false {
+        didSet { applyAlwaysOnTopToAllWindows() }
+    }
+    
+    var isCloakingEnabled: Bool = true {
+        didSet { applyCloakingToAllWindows() }
+    }
+    
+    var windowMaterial: UITheme.MaterialType = .content {
+        didSet { applyMaterialToAllWindows() }
+    }
+    
+    private init() {}
+    
+    // MARK: - Window Registration
+    func registerWindow(_ window: NSWindow) {
+        managedWindows.insert(window)
+        configureWindow(window)
+    }
+    
+    func unregisterWindow(_ window: NSWindow) {
+        managedWindows.remove(window)
+    }
+    
+    // MARK: - Window Configuration
+    private func configureWindow(_ window: NSWindow) {
+        // Apply unified window styling
+        applyUnifiedStyling(to: window)
+        
+        // Apply current settings
+        if isTranslucencyEnabled {
+            setWindowTranslucency(window, level: translucencyLevel)
+        }
+        
+        if isAlwaysOnTop {
+            setWindowAlwaysOnTop(window, enabled: true)
+        }
+        
+        if isCloakingEnabled {
+            applyCloaking(to: window)
+        }
+        
+        // Apply unified material to entire window including titlebar
+        applyMaterial(to: window, material: .content)
+    }
+    
+    // MARK: - Unified Window Styling
+    private func applyUnifiedStyling(to window: NSWindow) {
+        // Configure window appearance for native macOS look
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.toolbarStyle = .unified
+        
+        // Enable vibrancy and translucency
+        window.backgroundColor = NSColor.clear
+        window.isOpaque = false
+        
+        // Configure window behavior
+        window.hidesOnDeactivate = false
+        window.canHide = true
+        window.animationBehavior = .documentWindow
+        
+        // Set up window delegate for unified management
+        if window.delegate == nil {
+            window.delegate = UnifiedWindowDelegate.shared
+        }
+    }
+    
+    // MARK: - Translucency Management
+    private func setWindowTranslucency(_ window: NSWindow, level: Double) {
+        let clampedLevel = max(0.3, min(1.0, level))
+        window.alphaValue = clampedLevel
+        
+        // Adjust material opacity based on translucency
+        if let contentView = window.contentView {
+            contentView.layer?.opacity = Float(clampedLevel)
+        }
+    }
+    
+    private func applyTranslucencyToAllWindows() {
+        for window in managedWindows {
+            if isTranslucencyEnabled {
+                setWindowTranslucency(window, level: translucencyLevel)
+            } else {
+                setWindowTranslucency(window, level: 1.0)
+            }
+        }
+    }
+    
+    // MARK: - Always On Top Management
+    private func setWindowAlwaysOnTop(_ window: NSWindow, enabled: Bool) {
+        if !window.isKind(of: NSPanel.self) {
+            window.level = enabled ? .floating : .normal
+        }
+    }
+    
+    private func applyAlwaysOnTopToAllWindows() {
+        for window in managedWindows {
+            setWindowAlwaysOnTop(window, enabled: isAlwaysOnTop)
+        }
+    }
+    
+    // MARK: - Cloaking Management
+    private func applyCloaking(to window: NSWindow) {
+        // Configure collection behavior for screen recording protection
+        var behavior: NSWindow.CollectionBehavior = [.canJoinAllSpaces]
+        
+        if #available(macOS 11.0, *) {
+            behavior.insert(.auxiliary)
+        }
+        
+        window.collectionBehavior = behavior
+        window.sharingType = .none
+        window.displaysWhenScreenProfileChanges = false
+        window.hasShadow = false
+    }
+    
+    private func removeCloaking(from window: NSWindow) {
+        window.collectionBehavior = [.managed, .participatesInCycle]
+        window.sharingType = .readWrite
+        window.displaysWhenScreenProfileChanges = true
+        window.hasShadow = true
+    }
+    
+    private func applyCloakingToAllWindows() {
+        for window in managedWindows {
+            if isCloakingEnabled {
+                applyCloaking(to: window)
+            } else {
+                removeCloaking(from: window)
+            }
+        }
+    }
+    
+    // MARK: - Material Management
+    private func applyMaterial(to window: NSWindow, material: UITheme.MaterialType) {
+        guard let contentView = window.contentView else { return }
+        
+        // Remove existing material background if any
+        contentView.subviews.removeAll { view in
+            view.identifier?.rawValue == "UnifiedMaterialBackground"
+        }
+        
+        // Create SwiftUI material background
+        let materialView = NSHostingView(rootView: 
+            Rectangle()
+                .fill(material.material)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+        )
+        
+        materialView.identifier = NSUserInterfaceItemIdentifier("UnifiedMaterialBackground")
+        materialView.translatesAutoresizingMaskIntoConstraints = false
+        
+        contentView.addSubview(materialView, positioned: .below, relativeTo: nil)
+        
+        NSLayoutConstraint.activate([
+            materialView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            materialView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            materialView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            materialView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+        ])
+    }
+    
+    private func applyMaterialToAllWindows() {
+        for window in managedWindows {
+            applyMaterial(to: window, material: windowMaterial)
+        }
+    }
+    
+    // MARK: - Window Creation Helpers
+    func createUnifiedWindow(
+        contentRect: NSRect = NSRect(x: 100, y: 100, width: 1200, height: 800),
+        styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+        backing: NSWindow.BackingStoreType = .buffered
+    ) -> NSWindow {
+        let window = NSWindow(
+            contentRect: contentRect,
+            styleMask: styleMask,
+            backing: backing,
+            defer: false
+        )
+        
+        registerWindow(window)
+        return window
+    }
+    
+    // MARK: - Settings Integration
+    func updateFromStealthManager(_ stealthManager: StealthManager) {
+        isTranslucencyEnabled = stealthManager.isWindowTransparencyEnabled
+        translucencyLevel = stealthManager.windowTransparencyLevel
+        isAlwaysOnTop = stealthManager.isAlwaysOnTop
+        isCloakingEnabled = stealthManager.isWindowCloakingEnabled
+    }
+    
+    func syncToStealthManager(_ stealthManager: StealthManager) {
+        stealthManager.setWindowTransparencyEnabled(isTranslucencyEnabled)
+        stealthManager.setWindowTransparencyLevel(translucencyLevel)
+        stealthManager.setAlwaysOnTop(isAlwaysOnTop)
+        stealthManager.setWindowCloakingEnabled(isCloakingEnabled)
+    }
+}
+
+// MARK: - Unified Window Delegate
+class UnifiedWindowDelegate: NSObject, NSWindowDelegate {
+    static let shared = UnifiedWindowDelegate()
+    
+    private override init() {
+        super.init()
+    }
+    
+    func windowDidBecomeKey(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        
+        // Ensure unified styling is maintained
+        WindowManager.shared.registerWindow(window)
+    }
+    
+    func windowDidResignKey(_ notification: Notification) {
+        // Maintain window properties when losing key status
+    }
+    
+    func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        WindowManager.shared.unregisterWindow(window)
+    }
+    
+    func windowDidMiniaturize(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        
+        // Ensure properties are maintained during miniaturization
+        if WindowManager.shared.isCloakingEnabled {
+            window.collectionBehavior.insert(.stationary)
+        }
+    }
+    
+    func windowDidDeminiaturize(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        
+        // Restore normal collection behavior
+        if WindowManager.shared.isCloakingEnabled {
+            window.collectionBehavior.remove(.stationary)
+        }
+    }
+}
+
+// MARK: - SwiftUI Integration
+struct UnifiedWindowModifier: ViewModifier {
+    @State private var windowManager = WindowManager.shared
+    
+    func body(content: Content) -> some View {
+        content
+            .background(WindowManagerView())
+            .onAppear {
+                // Register current window when view appears
+                if let window = NSApp.keyWindow {
+                    windowManager.registerWindow(window)
+                }
+            }
+    }
+}
+
+struct WindowManagerView: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        
+        DispatchQueue.main.async {
+            if let window = view.window {
+                WindowManager.shared.registerWindow(window)
+            }
+        }
+        
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+extension View {
+    func unifiedWindow() -> some View {
+        self.modifier(UnifiedWindowModifier())
+    }
+}

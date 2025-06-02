@@ -61,6 +61,9 @@ class StealthManager {
     func setWindowCloakingEnabled(_ enabled: Bool) {
         isWindowCloakingEnabled = enabled
         applyWindowCloakingToAllWindows()
+        
+        // Sync with WindowManager
+        WindowManager.shared.isCloakingEnabled = enabled
     }
     
     // MARK: - Always On Top Management
@@ -68,6 +71,9 @@ class StealthManager {
     func setAlwaysOnTop(_ enabled: Bool) {
         isAlwaysOnTop = enabled
         applyAlwaysOnTopToAllWindows()
+        
+        // Sync with WindowManager
+        WindowManager.shared.isAlwaysOnTop = enabled
     }
     
     private func applyAlwaysOnTopToAllWindows() {
@@ -87,6 +93,9 @@ class StealthManager {
     func setWindowTransparencyEnabled(_ enabled: Bool) {
         isWindowTransparencyEnabled = enabled
         applyTransparencyToAllWindows()
+        
+        // Sync with WindowManager
+        WindowManager.shared.isTranslucencyEnabled = enabled
     }
     
     func setWindowTransparencyLevel(_ level: Double) {

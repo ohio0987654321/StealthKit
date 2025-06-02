@@ -163,7 +163,7 @@ struct SidebarSettingsItems: View {
                 )
             }
         }
-        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: UITheme.CornerRadius.card))
         .padding(.horizontal, 8)
         .padding(.bottom, 8)
     }
@@ -186,7 +186,7 @@ struct SidebarTabItems: View {
                 )
             }
         }
-        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: UITheme.CornerRadius.card))
         .padding(.horizontal, 8)
         .padding(.bottom, 8)
     }

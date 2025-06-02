@@ -20,7 +20,6 @@ struct BrowserView: View {
                 onCloseTab: handleCloseSpecificTab
             )
             .navigationSplitViewColumnWidth(min: 250, ideal: 280, max: 350)
-            .background(.ultraThinMaterial, in: Rectangle())
         } detail: {
             ZStack {
                 switch currentContent {
@@ -51,40 +50,32 @@ struct BrowserView: View {
                     })
                 }
             }
-            .background(.ultraThinMaterial, in: Rectangle())
             .navigationTitle("")
             .toolbar {
                 ToolbarItemGroup(placement: .navigation) {
-                    HStack(spacing: 6) {
-                        Button(action: {
+                    HStack(spacing: UITheme.Spacing.xs) {
+                        ThemedToolbarButton(
+                            icon: "chevron.left",
+                            isDisabled: !(getCurrentTab()?.canGoBack ?? false) || !isWebContentActive()
+                        ) {
                             if let webView = getCurrentWebView() {
                                 webView.goBack()
                             }
-                        }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(.primary)
                         }
-                        .buttonStyle(.borderless)
-                        .disabled(!(getCurrentTab()?.canGoBack ?? false) || !isWebContentActive())
-                        .frame(width: 28, height: 28)
-                        .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
                         
-                        Button(action: {
+                        ThemedToolbarButton(
+                            icon: "chevron.right",
+                            isDisabled: !(getCurrentTab()?.canGoForward ?? false) || !isWebContentActive()
+                        ) {
                             if let webView = getCurrentWebView() {
                                 webView.goForward()
                             }
-                        }) {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(.primary)
                         }
-                        .buttonStyle(.borderless)
-                        .disabled(!(getCurrentTab()?.canGoForward ?? false) || !isWebContentActive())
-                        .frame(width: 28, height: 28)
-                        .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
                         
-                        Button(action: {
+                        ThemedToolbarButton(
+                            icon: getCurrentTab()?.isLoading == true ? "xmark" : "arrow.clockwise",
+                            isDisabled: !isWebContentActive()
+                        ) {
                             if let webView = getCurrentWebView() {
                                 if getCurrentTab()?.isLoading == true {
                                     webView.stopLoading()
@@ -92,21 +83,14 @@ struct BrowserView: View {
                                     webView.reload()
                                 }
                             }
-                        }) {
-                            Image(systemName: getCurrentTab()?.isLoading == true ? "xmark" : "arrow.clockwise")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(.primary)
                         }
-                        .buttonStyle(.borderless)
-                        .disabled(!isWebContentActive())
-                        .frame(width: 28, height: 28)
-                        .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
                     }
                 }
                 
                 ToolbarItem(placement: .principal) {
                     TextField("Enter URL or search", text: $addressText)
                         .textFieldStyle(.roundedBorder)
+                        .font(UITheme.Typography.addressBar)
                         .focused($isAddressBarFocused)
                         .onSubmit {
                             handleAddressSubmit()
@@ -123,9 +107,12 @@ struct BrowserView: View {
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
+
         .frame(minWidth: 900, minHeight: 600)
+        .unifiedWindow()
         .onAppear {
             setupKeyboardShortcuts()
+            setupWindowManager()
             if let firstTab = viewModel.tabs.first {
                 selectedSidebarItem = .tab(firstTab.id)
                 currentContent = .webTab(firstTab)
@@ -261,6 +248,15 @@ struct BrowserView: View {
     
     private func removeKeyboardShortcuts() {
         NotificationCenter.default.removeObserver(self)
+    }
+    
+    private func setupWindowManager() {
+        // Integrate WindowManager with StealthManager
+        let windowManager = WindowManager.shared
+        let stealthManager = StealthManager.shared
+        
+        // Sync current stealth settings to window manager
+        windowManager.updateFromStealthManager(stealthManager)
     }
     
     private func handleCloseTab() {

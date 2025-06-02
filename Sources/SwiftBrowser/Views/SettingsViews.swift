@@ -7,11 +7,11 @@ struct SettingsSearchEngineView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text("Search Engine")
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                    .font(UITheme.Typography.title)
                 
                 Text("Choose your default search engine and configure search preferences.")
-                    .foregroundColor(.secondary)
+                    .font(UITheme.Typography.body)
+                    .foregroundColor(UITheme.Colors.secondary)
                 
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Default Search Engine")
