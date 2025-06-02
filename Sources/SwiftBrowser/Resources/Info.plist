@@ -31,7 +31,7 @@
     <key>LSUIElement</key>
     <false/>
     <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
+    <string>App</string>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.productivity</string>
 </dict>

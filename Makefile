@@ -8,13 +8,19 @@ APP_BUNDLE = $(BUILD_DIR)/$(PROJECT_NAME).app
 SWIFT_BUILD_DIR = $(BUILD_DIR)/release
 SOURCE_DIR = Sources/$(PROJECT_NAME)
 
+# DMG Variables
+DMG_NAME = $(PROJECT_NAME)
+DMG_FILE = $(BUILD_DIR)/$(DMG_NAME).dmg
+DMG_STAGING = $(BUILD_DIR)/dmg-staging
+DMG_VOLUME_NAME = $(PROJECT_NAME)
+
 # Colors for output
 RED = \033[0;31m
 GREEN = \033[0;32m
 YELLOW = \033[1;33m
 NC = \033[0m
 
-.PHONY: all build clean install run help
+.PHONY: all build clean install run release help
 
 # Default target
 all: build
@@ -44,6 +50,7 @@ clean:
 	@echo "$(YELLOW)Cleaning build artifacts...$(NC)"
 	@rm -rf $(BUILD_DIR)
 	@rm -rf SwiftBrowser.app
+	@rm -f *.dmg
 	@echo "$(GREEN)Clean complete$(NC)"
 
 # Install (copy to Applications - requires sudo)
@@ -57,6 +64,21 @@ run: build
 	@echo "$(YELLOW)Running $(PROJECT_NAME)...$(NC)"
 	@open $(APP_BUNDLE)
 
+# Create DMG for distribution
+release: build
+	@echo "$(YELLOW)Creating DMG package...$(NC)"
+	@mkdir -p $(DMG_STAGING)
+	@cp -r $(APP_BUNDLE) $(DMG_STAGING)/
+	@ln -sf /Applications $(DMG_STAGING)/Applications
+	@rm -f $(DMG_FILE)
+	@hdiutil create -volname "$(DMG_VOLUME_NAME)" \
+		-srcfolder $(DMG_STAGING) \
+		-ov -format UDZO \
+		-imagekey zlib-level=9 \
+		$(DMG_FILE)
+	@rm -rf $(DMG_STAGING)
+	@echo "$(GREEN)DMG created: $(DMG_FILE)$(NC)"
+
 # Show help
 help:
 	@echo "$(PROJECT_NAME) Build System"
@@ -66,6 +88,7 @@ help:
 	@echo "  clean     - Clean build artifacts"
 	@echo "  install   - Install to /Applications (requires sudo)"
 	@echo "  run       - Build and run the application"
+	@echo "  release   - Create DMG package for distribution"
 	@echo "  help      - Show this help message"
 	@echo ""
 	@echo "Output: $(APP_BUNDLE)"
