@@ -3,6 +3,7 @@ import SwiftUI
 enum ContentType {
     case settingsSearchEngine
     case settingsWindowUtilities
+    case settingsWindowTransparency
     case webTab(Tab)
     case welcome
 }
@@ -12,6 +13,7 @@ enum SidebarItem: Hashable {
     case settingsBrowserUtilities
     case settingsSearchEngine
     case settingsWindowUtilities
+    case settingsWindowTransparency
     case settingsScreenRecording
     case settingsAlwaysOnTop
     case tabsSection
@@ -146,6 +148,14 @@ struct SidebarSettingsItems: View {
             )
             
             if windowUtilitiesExpanded {
+                SidebarRowView(
+                    icon: "square.dashed",
+                    title: "Window Transparency",
+                    isSelected: selectedItem == .settingsWindowTransparency,
+                    onSelect: { onSelectionChange(.settingsWindowTransparency) },
+                    indentLevel: 2
+                )
+                
                 SidebarRowView(
                     icon: "rectangle.on.rectangle",
                     title: "Screen Recording Bypass",

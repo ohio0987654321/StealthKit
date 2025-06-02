@@ -86,11 +86,21 @@ class WindowManager {
     // MARK: - Translucency Management
     private func setWindowTranslucency(_ window: NSWindow, level: Double) {
         let clampedLevel = max(0.3, min(1.0, level))
+        
+        // Apply transparency only to the window chrome, not content
         window.alphaValue = clampedLevel
         
-        // Adjust material opacity based on translucency
+        // Ensure content view remains fully opaque to preserve web content readability
         if let contentView = window.contentView {
-            contentView.layer?.opacity = Float(clampedLevel)
+            contentView.alphaValue = 1.0
+            contentView.layer?.opacity = 1.0
+            
+            // Only adjust the material background's opacity if it exists
+            if let materialView = contentView.subviews.first(where: { view in
+                view.identifier?.rawValue == "UnifiedMaterialBackground"
+            }) {
+                materialView.alphaValue = clampedLevel
+            }
         }
     }
     
