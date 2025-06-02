@@ -73,7 +73,7 @@ struct WelcomeView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.regularMaterial, in: Rectangle())
+        .background(.ultraThinMaterial, in: Rectangle())
         .overlay {
             // Subtle gradient overlay for depth
             LinearGradient(

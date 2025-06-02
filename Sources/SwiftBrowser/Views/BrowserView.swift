@@ -20,7 +20,7 @@ struct BrowserView: View {
                 onCloseTab: handleCloseSpecificTab
             )
             .navigationSplitViewColumnWidth(min: 250, ideal: 280, max: 350)
-            .background(.regularMaterial, in: Rectangle())
+            .background(.ultraThinMaterial, in: Rectangle())
         } detail: {
             ZStack {
                 switch currentContent {

@@ -66,7 +66,6 @@ struct HierarchicalSidebarView: View {
             }
         }
         .navigationTitle("")
-        .background(.regularMaterial, in: Rectangle())
     }
 }
 
@@ -164,6 +163,9 @@ struct SidebarSettingsItems: View {
                 )
             }
         }
+        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal, 8)
+        .padding(.bottom, 8)
     }
 }
 
@@ -184,6 +186,9 @@ struct SidebarTabItems: View {
                 )
             }
         }
+        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal, 8)
+        .padding(.bottom, 8)
     }
 }
 
