@@ -69,27 +69,14 @@ struct SettingsWindowUtilitiesView: View {
                     }
                     
                     GroupBox("Window Behavior") {
-                        VStack(alignment: .leading, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Toggle("Always on Top", isOn: Binding(
-                                    get: { windowUtilityManager.isAlwaysOnTop },
-                                    set: { windowUtilityManager.setAlwaysOnTop($0) }
-                                ))
-                                Text("Keep browser window above all other windows")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 8) {
-                                Toggle("Hide window in Mission Control", isOn: Binding(
-                                    get: { windowUtilityManager.hideInMissionControl },
-                                    set: { windowUtilityManager.setHideInMissionControl($0) }
-                                ))
-                                .disabled(!windowUtilityManager.isAlwaysOnTop)
-                                Text("When Always on Top is enabled, hide window during Mission Control")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
+                        VStack(alignment: .leading, spacing: 8) {
+                            Toggle("Always on Top", isOn: Binding(
+                                get: { windowUtilityManager.isAlwaysOnTop },
+                                set: { windowUtilityManager.setAlwaysOnTop($0) }
+                            ))
+                            Text("Keep browser window above all other windows. Note: Always on Top windows are hidden during Mission Control.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
                         .padding(.vertical, 4)
                     }
@@ -138,27 +125,14 @@ struct SettingsWindowUtilitiesView: View {
                     }
                     
                     GroupBox("Application Behavior") {
-                        VStack(alignment: .leading, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Toggle("Accessory App Mode", isOn: Binding(
-                                    get: { windowUtilityManager.isAccessoryApp },
-                                    set: { windowUtilityManager.setAccessoryApp($0) }
-                                ))
-                                Text("App runs as accessory without appearing in Dock or menu bar when focused")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 8) {
-                                Toggle("Show Dock Icon", isOn: Binding(
-                                    get: { windowUtilityManager.showDockIcon },
-                                    set: { windowUtilityManager.setShowDockIcon($0) }
-                                ))
-                                .disabled(windowUtilityManager.isAccessoryApp)
-                                Text("When disabled, app won't appear in Dock (accessory mode overrides this)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
+                        VStack(alignment: .leading, spacing: 8) {
+                            Toggle("Accessory App Mode", isOn: Binding(
+                                get: { windowUtilityManager.isAccessoryApp },
+                                set: { windowUtilityManager.setAccessoryApp($0) }
+                            ))
+                            Text("When enabled: App won't appear in Dock or menu bar when focused. When disabled: Normal dock icon behavior.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
                         .padding(.vertical, 4)
                     }

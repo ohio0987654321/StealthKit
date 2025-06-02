@@ -2,6 +2,11 @@ import Foundation
 import AppKit
 import WebKit
 
+// MARK: - Notification Extensions
+extension Notification.Name {
+    static let openSettings = Notification.Name("openSettings")
+}
+
 @Observable
 class StealthManager {
     static let shared = StealthManager()
@@ -14,9 +19,10 @@ class StealthManager {
     
     // New window utility settings
     var isPinnedToCurrentDesktop: Bool = true
-    var hideInMissionControl: Bool = false
     var isAccessoryApp: Bool = false
-    var showDockIcon: Bool = true
+    
+    // Menu bar icon for accessory mode
+    private var statusItem: NSStatusItem?
     
     private init() {
         initializeStealthFeatures()
@@ -92,14 +98,15 @@ class StealthManager {
         for window in NSApp.windows {
             if !window.isKind(of: NSPanel.self) {
                 if isAlwaysOnTop {
-                    // Choose window level based on Mission Control visibility preference
-                    if hideInMissionControl {
-                        window.level = .floating  // Floating level hides in Mission Control
-                    } else {
-                        window.level = .statusBar  // StatusBar level stays visible in Mission Control
-                    }
+                    // Simple always on top - accepts that it hides in Mission Control
+                    window.level = .floating
                 } else {
                     window.level = .normal
+                    // Restore normal collection behavior
+                    var behavior = window.collectionBehavior
+                    behavior.remove(.ignoresCycle)
+                    behavior.insert(.participatesInCycle)
+                    window.collectionBehavior = behavior
                 }
             }
         }
@@ -144,43 +151,58 @@ class StealthManager {
         WindowManager.shared.updatePinnedToCurrentDesktop(enabled)
     }
     
-    func setHideInMissionControl(_ enabled: Bool) {
-        hideInMissionControl = enabled
-        applyAlwaysOnTopToAllWindows()
-        
-        // Update WindowManager to avoid circular dependency
-        WindowManager.shared.updateHideInMissionControl(enabled)
-    }
-    
     func setAccessoryApp(_ enabled: Bool) {
         isAccessoryApp = enabled
         applyAccessoryAppPolicy()
     }
     
-    func setShowDockIcon(_ enabled: Bool) {
-        showDockIcon = enabled
-        applyDockIconVisibility()
-    }
-    
     private func applyAccessoryAppPolicy() {
-        if isAccessoryApp {
-            NSApp.setActivationPolicy(.accessory)
-        } else {
-            NSApp.setActivationPolicy(.regular)
-            // When switching back to regular, apply dock icon setting
-            applyDockIconVisibility()
-        }
-    }
-    
-    private func applyDockIconVisibility() {
-        // Only apply dock icon visibility when not in accessory mode
-        if !isAccessoryApp {
-            if showDockIcon {
-                NSApp.setActivationPolicy(.regular)
+        DispatchQueue.main.async {
+            if self.isAccessoryApp {
+                NSApp.setActivationPolicy(.accessory)  // No dock icon, no menu bar switching
+                self.setupMenuBarIcon()
             } else {
-                NSApp.setActivationPolicy(.prohibited)
+                self.removeMenuBarIcon()
+                NSApp.setActivationPolicy(.regular)     // Normal dock icon and menu bar
             }
         }
+    }
+    
+    // MARK: - Menu Bar Icon Management
+    
+    private func setupMenuBarIcon() {
+        guard statusItem == nil else { return }
+        
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem?.button?.image = NSImage(systemSymbolName: "globe", accessibilityDescription: "Browser")
+        
+        let menu = NSMenu()
+        
+        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: "")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "")
+        menu.addItem(quitItem)
+        
+        statusItem?.menu = menu
+    }
+    
+    private func removeMenuBarIcon() {
+        if let statusItem = statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+            self.statusItem = nil
+        }
+    }
+    
+    @objc private func openSettings() {
+        // Post notification to open settings
+        NotificationCenter.default.post(name: .openSettings, object: nil)
+        
+        // Also bring the app to front if needed
+        NSApp.activate(ignoringOtherApps: true)
     }
     
     // MARK: - Window Creation

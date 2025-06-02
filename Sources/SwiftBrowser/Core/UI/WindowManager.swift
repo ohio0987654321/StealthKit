@@ -34,7 +34,6 @@ class WindowManager {
     
     // Store settings to avoid singleton access during initialization
     private var currentIsPinnedToCurrentDesktop: Bool = true
-    private var currentHideInMissionControl: Bool = false
     
     private init() {}
     
@@ -124,18 +123,8 @@ class WindowManager {
     private func setWindowAlwaysOnTop(_ window: NSWindow, enabled: Bool) {
         if !window.isKind(of: NSPanel.self) {
             if enabled {
-                // Choose window level based on Mission Control visibility preference
-                if currentHideInMissionControl {
-                    window.level = .floating  // Floating level hides in Mission Control
-                } else {
-                    // Use a level that stays visible in Mission Control
-                    window.level = .tornOffMenu  // This level stays visible in Mission Control
-                    // Also ensure collection behavior supports Mission Control visibility
-                    var behavior = window.collectionBehavior
-                    behavior.remove(.ignoresCycle)
-                    behavior.insert(.participatesInCycle)
-                    window.collectionBehavior = behavior
-                }
+                // Simple always on top - accepts that it hides in Mission Control
+                window.level = .floating
             } else {
                 window.level = .normal
                 // Restore normal collection behavior
@@ -266,7 +255,6 @@ class WindowManager {
         
         // Update private settings to avoid circular dependency
         currentIsPinnedToCurrentDesktop = stealthManager.isPinnedToCurrentDesktop
-        currentHideInMissionControl = stealthManager.hideInMissionControl
     }
     
     func syncToStealthManager(_ stealthManager: StealthManager) {
@@ -276,7 +264,6 @@ class WindowManager {
         stealthManager.setWindowCloakingEnabled(isCloakingEnabled)
 
         stealthManager.setPinnedToCurrentDesktop(currentIsPinnedToCurrentDesktop)
-        stealthManager.setHideInMissionControl(currentHideInMissionControl)
     }
     
     // Methods to update settings without triggering circular dependency
@@ -285,10 +272,7 @@ class WindowManager {
         applyCloakingToAllWindows()
     }
     
-    func updateHideInMissionControl(_ enabled: Bool) {
-        currentHideInMissionControl = enabled
-        applyAlwaysOnTopToAllWindows()
-    }
+
 }
 
 // MARK: - Unified Window Delegate
