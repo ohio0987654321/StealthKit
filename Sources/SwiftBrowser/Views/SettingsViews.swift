@@ -32,8 +32,7 @@ struct SettingsSearchEngineView: View {
 }
 
 struct SettingsWindowUtilitiesView: View {
-    @State private var windowUtilityManager = StealthManager.shared
-    @State private var windowManager = WindowManager.shared
+    @State private var windowService = WindowService.shared
     
     var body: some View {
         ScrollView {
@@ -48,19 +47,13 @@ struct SettingsWindowUtilitiesView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     GroupBox("Screen Recording Bypass") {
                         VStack(alignment: .leading, spacing: 8) {
-                            Toggle("NSPanel Window Cloaking", isOn: Binding(
-                                get: { windowUtilityManager.isWindowCloakingEnabled },
-                                set: { windowUtilityManager.setWindowCloakingEnabled($0) }
-                            ))
+                            Toggle("NSPanel Window Cloaking", isOn: $windowService.isCloakingEnabled)
                             Text("Makes browser windows invisible to screen recording and screenshot tools")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             
-                            Toggle("Pin to Current Desktop", isOn: Binding(
-                                get: { windowUtilityManager.isPinnedToCurrentDesktop },
-                                set: { windowUtilityManager.setPinnedToCurrentDesktop($0) }
-                            ))
-                            .disabled(!windowUtilityManager.isWindowCloakingEnabled)
+                            Toggle("Pin to Current Desktop", isOn: $windowService.isPinnedToCurrentDesktop)
+                            .disabled(!windowService.isCloakingEnabled)
                             Text("When enabled, window stays on current virtual desktop only")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
@@ -70,10 +63,7 @@ struct SettingsWindowUtilitiesView: View {
                     
                     GroupBox("Window Behavior") {
                         VStack(alignment: .leading, spacing: 8) {
-                            Toggle("Always on Top", isOn: Binding(
-                                get: { windowUtilityManager.isAlwaysOnTop },
-                                set: { windowUtilityManager.setAlwaysOnTop($0) }
-                            ))
+                            Toggle("Always on Top", isOn: $windowService.isAlwaysOnTop)
                             Text("Keep browser window above all other windows. Note: Always on Top windows are hidden during Mission Control.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
@@ -84,27 +74,27 @@ struct SettingsWindowUtilitiesView: View {
                     GroupBox("Window Transparency") {
                         VStack(alignment: .leading, spacing: 12) {
                             VStack(alignment: .leading, spacing: 8) {
-                                Toggle("Enable Window Transparency", isOn: $windowManager.isTranslucencyEnabled)
+                                Toggle("Enable Window Transparency", isOn: $windowService.isTransparencyEnabled)
                                 Text("Make the browser window semi-transparent")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
                             
-                            if windowManager.isTranslucencyEnabled {
+                            if windowService.isTransparencyEnabled {
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
                                         Text("Transparency Level")
                                             .font(.subheadline)
                                         Spacer()
-                                        Text("\(Int((1.0 - windowManager.translucencyLevel) * 100))%")
+                                        Text("\(Int((1.0 - windowService.transparencyLevel) * 100))%")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                     }
                                     
                                     Slider(
                                         value: Binding(
-                                            get: { 1.0 - windowManager.translucencyLevel },
-                                            set: { windowManager.translucencyLevel = 1.0 - $0 }
+                                            get: { 1.0 - windowService.transparencyLevel },
+                                            set: { windowService.transparencyLevel = 1.0 - $0 }
                                         ),
                                         in: 0.1...0.7
                                     ) {
@@ -126,10 +116,7 @@ struct SettingsWindowUtilitiesView: View {
                     
                     GroupBox("Application Behavior") {
                         VStack(alignment: .leading, spacing: 8) {
-                            Toggle("Accessory App Mode", isOn: Binding(
-                                get: { windowUtilityManager.isAccessoryApp },
-                                set: { windowUtilityManager.setAccessoryApp($0) }
-                            ))
+                            Toggle("Accessory App Mode", isOn: $windowService.isAccessoryApp)
                             Text("When enabled: App won't appear in Dock or menu bar when focused. When disabled: Normal dock icon behavior.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)

@@ -110,7 +110,7 @@ struct BrowserView: View {
         .navigationSplitViewStyle(.prominentDetail)
 
         .frame(minWidth: 900, minHeight: 600)
-        .unifiedWindow()
+        .managedWindow()
         .onAppear {
             setupKeyboardShortcuts()
             setupWindowManager()
@@ -171,7 +171,7 @@ struct BrowserView: View {
                     webView.load(URLRequest(url: url))
                 }
             } else {
-                let newTab = viewModel.createNewWebTab(with: url)
+                let newTab = viewModel.createNewTab(with: url)
                 selectedSidebarItem = .tab(newTab.id)
                 currentContent = .webTab(newTab)
             }
@@ -249,12 +249,8 @@ struct BrowserView: View {
     }
     
     private func setupWindowManager() {
-        // Integrate WindowManager with StealthManager
-        let windowManager = WindowManager.shared
-        let stealthManager = StealthManager.shared
-        
-        // Sync current stealth settings to window manager
-        windowManager.updateFromStealthManager(stealthManager)
+        // Initialize the unified window service
+        _ = WindowService.shared
     }
     
     private func handleCloseTab() {

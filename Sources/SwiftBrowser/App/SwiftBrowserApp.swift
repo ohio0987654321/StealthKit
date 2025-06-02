@@ -7,7 +7,7 @@ struct SwiftBrowserApp: App {
             BrowserView()
                 .onAppear {
                     DispatchQueue.main.async {
-                        _ = StealthManager.shared
+                        _ = WindowService.shared
                     }
                 }
         }
@@ -54,4 +54,5 @@ extension Notification.Name {
     static let closeTab = Notification.Name("closeTab")
     static let reload = Notification.Name("reload")
     static let focusAddressBar = Notification.Name("focusAddressBar")
+    static let openSettings = Notification.Name("openSettings")
 }

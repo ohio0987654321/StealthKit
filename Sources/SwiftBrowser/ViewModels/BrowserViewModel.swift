@@ -22,10 +22,7 @@ class BrowserViewModel {
         return newTab
     }
     
-    @discardableResult
-    func createNewWebTab(with url: URL? = nil) -> Tab {
-        return createNewTab(with: url)
-    }
+
     
     func closeTab(at index: Int) {
         guard index >= 0 && index < tabs.count else { return }
