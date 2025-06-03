@@ -47,19 +47,26 @@ struct SettingsWindowUtilitiesView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     // Screen Recording Bypass section
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Screen Recording Bypass")
+                        Text("Privacy Features")
                             .font(.headline)
                         
                         VStack(alignment: .leading, spacing: 8) {
-                            Toggle("NSPanel Window Cloaking", isOn: $windowService.isCloakingEnabled)
+                            Toggle("Screen Recording Bypass", isOn: $windowService.isScreenRecordingBypassEnabled)
                             
                             Text("Makes browser windows invisible to screen recording and screenshot tools")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                                 .padding(.leading, 20)
                             
+                            Toggle("Traffic Light Prevention", isOn: $windowService.isTrafficLightPreventionEnabled)
+                            
+                            Text("Prevents traffic light buttons from activating window focus (requires window restart)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .padding(.leading, 20)
+                            
                             Toggle("Pin to Current Desktop", isOn: $windowService.isPinnedToCurrentDesktop)
-                                .disabled(!windowService.isCloakingEnabled)
+                                .disabled(!windowService.isScreenRecordingBypassEnabled)
                             
                             Text("When enabled, window stays on current virtual desktop only")
                                 .font(.caption)

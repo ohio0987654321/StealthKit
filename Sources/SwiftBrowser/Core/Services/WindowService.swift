@@ -1,3 +1,4 @@
+// Fixed version - preserves toolbar functionality
 import SwiftUI
 import AppKit
 import WebKit
@@ -25,8 +26,20 @@ class WindowService {
         didSet { applyAlwaysOnTopToAllWindows() }
     }
     
-    var isCloakingEnabled: Bool = true {
-        didSet { applyCloakingToAllWindows() }
+    // MARK: - Separated Feature Controls
+    
+    // Screen Recording Bypass - applies dynamically (no reinitilization needed)
+    var isScreenRecordingBypassEnabled: Bool = false {
+        didSet { 
+            applyScreenRecordingBypassToAllWindows()
+        }
+    }
+    
+    // Feature A: Traffic Light Prevention - requires reinitilization
+    var isTrafficLightPreventionEnabled: Bool = false {
+        didSet { 
+            updateTrafficLightPrevention()
+        }
     }
     
     var isPinnedToCurrentDesktop: Bool = true {
@@ -47,6 +60,16 @@ class WindowService {
         // Set up window delegate
         if window.delegate == nil {
             window.delegate = WindowServiceDelegate.shared
+        }
+    }
+    
+    func registerPanel(_ panel: NSPanel) {
+        managedWindows.insert(panel)
+        configurePanel(panel)
+        
+        // Set up panel delegate
+        if panel.delegate == nil {
+            panel.delegate = WindowServiceDelegate.shared
         }
     }
     
@@ -74,8 +97,47 @@ class WindowService {
             setWindowAlwaysOnTop(window)
         }
         
-        if isCloakingEnabled {
+        if isScreenRecordingBypassEnabled {
             applyCloaking(to: window)
+        }
+    }
+    
+    private func configurePanel(_ panel: NSPanel) {
+        // Configure panel while preserving non-activating behavior
+        panel.titlebarAppearsTransparent = false
+        panel.titleVisibility = .visible  // Keep title visible for toolbar
+        panel.toolbarStyle = .unified     // This is crucial for toolbar
+        panel.hidesOnDeactivate = false
+        panel.canHide = true
+        panel.animationBehavior = .documentWindow
+        panel.isOpaque = false
+        
+        // For non-activating panels, we need special toolbar handling
+        panel.becomesKeyOnlyIfNeeded = true  // Preserve non-activating behavior
+        panel.worksWhenModal = false
+        
+        // CRITICAL: Force toolbar to be visible on non-activating panels
+        // This is a workaround for NSPanel toolbar visibility issues
+        DispatchQueue.main.async {
+            if let toolbar = panel.toolbar {
+                toolbar.isVisible = true
+                // Force toolbar to display properly
+                panel.toggleToolbarShown(nil)
+                panel.toggleToolbarShown(nil)
+            }
+        }
+        
+        // Apply current settings
+        if isTransparencyEnabled {
+            setWindowTransparency(panel, level: transparencyLevel)
+        }
+        
+        if isAlwaysOnTop {
+            setPanelAlwaysOnTop(panel)
+        }
+        
+        if isScreenRecordingBypassEnabled {
+            applyCloaking(to: panel)
         }
     }
     
@@ -110,9 +172,26 @@ class WindowService {
         }
     }
     
+    private func setPanelAlwaysOnTop(_ panel: NSPanel) {
+        // For panels, use different level management while preserving toolbar
+        panel.level = isAlwaysOnTop ? .floating : .normal
+        
+        // Preserve non-activating behavior while ensuring toolbar works
+        if !isAlwaysOnTop {
+            var behavior = panel.collectionBehavior
+            behavior.remove(.ignoresCycle)
+            behavior.insert(.participatesInCycle)
+            panel.collectionBehavior = behavior
+        }
+    }
+    
     private func applyAlwaysOnTopToAllWindows() {
         for window in managedWindows {
-            setWindowAlwaysOnTop(window)
+            if let panel = window as? NSPanel {
+                setPanelAlwaysOnTop(panel)
+            } else {
+                setWindowAlwaysOnTop(window)
+            }
         }
     }
     
@@ -128,10 +207,20 @@ class WindowService {
             behavior.insert(.auxiliary)
         }
         
+        // Preserve managed behavior for proper window management
+        behavior.insert(.managed)
+        
         window.collectionBehavior = behavior
         window.sharingType = .none
         window.displaysWhenScreenProfileChanges = false
         window.hasShadow = false
+        
+        // Special handling for panels to ensure toolbar remains visible
+        if let panel = window as? NSPanel, let toolbar = panel.toolbar {
+            DispatchQueue.main.async {
+                toolbar.isVisible = true
+            }
+        }
     }
     
     private func removeCloaking(from window: NSWindow) {
@@ -141,9 +230,10 @@ class WindowService {
         window.hasShadow = true
     }
     
-    private func applyCloakingToAllWindows() {
+    // MARK: - Screen Recording Bypass Management
+    private func applyScreenRecordingBypassToAllWindows() {
         for window in managedWindows {
-            if isCloakingEnabled {
+            if isScreenRecordingBypassEnabled {
                 applyCloaking(to: window)
             } else {
                 removeCloaking(from: window)
@@ -154,6 +244,12 @@ class WindowService {
         if isAlwaysOnTop {
             applyAlwaysOnTopToAllWindows()
         }
+    }
+    
+    // Legacy method for desktop pinning compatibility
+    private func applyCloakingToAllWindows() {
+        // This method now just delegates to the screen recording bypass
+        applyScreenRecordingBypassToAllWindows()
     }
     
     // MARK: - Accessory App Management
@@ -190,7 +286,81 @@ class WindowService {
         }
     }
     
-
+    // MARK: - Traffic Light Prevention (Feature A)
+    private func updateTrafficLightPrevention() {
+        print("Traffic light prevention update triggered. Enabled: \(isTrafficLightPreventionEnabled)")
+        
+        // Update all managed panels with new style mask
+        let panelsToUpdate = Array(managedWindows.compactMap { $0 as? NSPanel })
+        
+        for panel in panelsToUpdate {
+            reinitilizePanelWithNewStyleMask(panel)
+        }
+    }
+    
+    private func reinitilizePanelWithNewStyleMask(_ panel: NSPanel) {
+        // Preserve panel state
+        let frame = panel.frame
+        let contentView = panel.contentView
+        let toolbar = panel.toolbar
+        let isKeyWindow = panel.isKeyWindow
+        let isMainWindow = panel.isMainWindow
+        let alphaValue = panel.alphaValue
+        let level = panel.level
+        
+        // Determine new style mask based on traffic light prevention state
+        let newStyleMask: NSPanel.StyleMask = isTrafficLightPreventionEnabled ? 
+            [.nonactivatingPanel, .titled, .closable, .resizable, .fullSizeContentView] :
+            [.titled, .closable, .resizable, .fullSizeContentView]
+        
+        // Create new panel with updated style mask
+        let newPanel = NSPanel(
+            contentRect: frame,
+            styleMask: newStyleMask,
+            backing: .buffered,
+            defer: false
+        )
+        
+        // Transfer all properties safely
+        if let existingToolbar = toolbar {
+            newPanel.toolbar = existingToolbar
+        }
+        
+        if let content = contentView {
+            newPanel.contentView = content
+        }
+        
+        // Restore panel properties
+        newPanel.setFrame(frame, display: false)
+        newPanel.alphaValue = alphaValue
+        newPanel.level = level
+        
+        // Apply current configuration
+        configurePanel(newPanel)
+        
+        // Replace the old panel
+        if isKeyWindow || isMainWindow {
+            newPanel.makeKeyAndOrderFront(nil)
+        } else {
+            newPanel.orderFront(nil)
+        }
+        
+        // Clean up - unregister old panel and register new one
+        unregisterWindow(panel)
+        registerPanel(newPanel)
+        
+        panel.orderOut(nil)
+        
+        // Safe cleanup
+        DispatchQueue.main.async {
+            panel.close()
+            
+            // Ensure toolbar visibility
+            if let toolbar = newPanel.toolbar {
+                toolbar.isVisible = true
+            }
+        }
+    }
     
     // MARK: - WebView Configuration
     func configureWebViewForStealth(_ webView: WKWebView) {
@@ -216,6 +386,21 @@ class WindowService {
         registerWindow(window)
         return window
     }
+    
+    func createPanel(
+        contentRect: NSRect = NSRect(x: 100, y: 100, width: 1200, height: 800),
+        styleMask: NSPanel.StyleMask = [.nonactivatingPanel, .titled, .closable, .resizable, .fullSizeContentView]
+    ) -> NSPanel {
+        let panel = NSPanel(
+            contentRect: contentRect,
+            styleMask: styleMask,
+            backing: .buffered,
+            defer: false
+        )
+        
+        registerPanel(panel)
+        return panel
+    }
 }
 
 // MARK: - Window Delegate
@@ -239,7 +424,7 @@ class WindowServiceDelegate: NSObject, NSWindowDelegate {
     func windowDidMiniaturize(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
         
-        if WindowService.shared.isCloakingEnabled {
+        if WindowService.shared.isScreenRecordingBypassEnabled {
             window.collectionBehavior.insert(.stationary)
         }
     }
@@ -247,7 +432,7 @@ class WindowServiceDelegate: NSObject, NSWindowDelegate {
     func windowDidDeminiaturize(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
         
-        if WindowService.shared.isCloakingEnabled {
+        if WindowService.shared.isScreenRecordingBypassEnabled {
             window.collectionBehavior.remove(.stationary)
         }
     }
@@ -256,14 +441,68 @@ class WindowServiceDelegate: NSObject, NSWindowDelegate {
 // MARK: - SwiftUI Integration
 struct WindowServiceModifier: ViewModifier {
     @State private var windowService = WindowService.shared
+    @State private var hasSetupPanel = false
     
     func body(content: Content) -> some View {
         content
             .onAppear {
-                if let window = NSApp.keyWindow {
-                    windowService.registerWindow(window)
+                guard !hasSetupPanel else { return }
+                hasSetupPanel = true
+                
+                // Wait for next run loop to ensure the window is fully set up
+                DispatchQueue.main.async {
+                    self.setupPanelFromCurrentWindow()
                 }
             }
+    }
+    
+    private func setupPanelFromCurrentWindow() {
+        guard let currentWindow = NSApp.keyWindow else { return }
+        
+        // Always convert to NSPanel (simplified approach)
+        convertToPanel(currentWindow)
+    }
+    
+    private func convertToPanel(_ currentWindow: NSWindow) {
+        // Get the current window's properties
+        let frame = currentWindow.frame
+        let contentView = currentWindow.contentView
+        let toolbar = currentWindow.toolbar  // Preserve the toolbar!
+        
+        // Always create NSPanel, but with appropriate style mask based on Feature A state
+        let styleMask: NSPanel.StyleMask = windowService.isTrafficLightPreventionEnabled ? 
+            [.nonactivatingPanel, .titled, .closable, .resizable, .fullSizeContentView] :
+            [.titled, .closable, .resizable, .fullSizeContentView]
+        
+        let panel = windowService.createPanel(
+            contentRect: frame,
+            styleMask: styleMask
+        )
+        
+        // Transfer the toolbar BEFORE transferring content
+        if let existingToolbar = toolbar {
+            panel.toolbar = existingToolbar
+        }
+        
+        // Transfer the content view to the panel
+        if let content = contentView {
+            panel.contentView = content
+        }
+        
+        // Position the panel where the window was
+        panel.setFrame(frame, display: true)
+        
+        // Show the panel and hide the original window
+        panel.makeKeyAndOrderFront(nil)
+        currentWindow.orderOut(nil)
+        
+        // Ensure toolbar is visible after setup
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if let toolbar = panel.toolbar {
+                toolbar.isVisible = true
+            }
+            currentWindow.close()
+        }
     }
 }
 
