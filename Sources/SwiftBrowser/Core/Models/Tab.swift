@@ -3,6 +3,7 @@ import WebKit
 import SwiftUI
 
 enum TabType {
+    case empty
     case web(URL?)
     case settings(SettingsType)
 }
@@ -27,7 +28,11 @@ class Tab: Identifiable {
     let tabType: TabType
     
     init(url: URL? = nil) {
-        self.tabType = .web(url)
+        if url == nil {
+            self.tabType = .empty
+        } else {
+            self.tabType = .web(url)
+        }
         self.url = url
         if let url = url {
             self.title = url.host ?? url.absoluteString

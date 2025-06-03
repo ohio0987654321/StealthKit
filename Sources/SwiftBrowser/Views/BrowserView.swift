@@ -36,6 +36,9 @@ struct BrowserView: View {
                 ZStack {
                     if let tab = currentTab {
                         switch tab.tabType {
+                        case .empty:
+                            EmptyTabView()
+                                .id(tab.id)
                         case .web:
                             WebView(
                                 tab: .constant(tab),
@@ -170,6 +173,8 @@ struct BrowserView: View {
         if let tab = viewModel.tabs.first(where: { $0.id == tabId }) {
             // Set sidebar selection based on tab type
             switch tab.tabType {
+            case .empty:
+                selectedSidebarItem = .tab(tabId)
             case .web:
                 selectedSidebarItem = .tab(tabId)
             case .settings(let settingsType):
@@ -216,9 +221,17 @@ struct BrowserView: View {
         isAddressBarFocused = false
         
         if let url = createURL(from: addressText) {
-            // If current tab is a settings tab, convert it to a web tab
+            // If current tab is empty or settings, convert it to a web tab
             if let tab = currentTab {
-                if case .settings = tab.tabType {
+                if case .empty = tab.tabType {
+                    // Convert empty tab to web tab
+                    let newWebTab = Tab(url: url)
+                    if let index = viewModel.tabs.firstIndex(where: { $0.id == tab.id }) {
+                        viewModel.tabs[index] = newWebTab
+                        currentTab = newWebTab
+                        selectedSidebarItem = .tab(newWebTab.id)
+                    }
+                } else if case .settings = tab.tabType {
                     // Convert settings tab to web tab
                     let newWebTab = Tab(url: url)
                     if let index = viewModel.tabs.firstIndex(where: { $0.id == tab.id }) {

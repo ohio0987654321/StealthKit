@@ -86,6 +86,12 @@ struct TabItemView: View {
             Rectangle()
                 .fill(isSelected ? UITheme.Colors.backgroundPrimary : Color.clear)
         )
+        .overlay(
+            Rectangle()
+                .fill(Color.black)
+                .frame(width: UIConstants.TabBar.borderWidth),
+            alignment: .trailing
+        )
         .contentShape(Rectangle())
         .onTapGesture { onSelect() }
         .onHover { hovering in

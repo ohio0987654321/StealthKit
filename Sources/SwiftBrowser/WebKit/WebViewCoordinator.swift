@@ -29,10 +29,8 @@ struct WebView: NSViewRepresentable {
         // Load initial content only for new WebViews
         if let url = tab.url {
             webView.load(URLRequest(url: url))
-        } else {
-            // For new empty tabs, load custom new tab page
-            loadNewTabPage(in: webView)
         }
+        // For new empty tabs, leave WebView empty (no content loading)
         
         return webView
     }
@@ -137,8 +135,4 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         let response = alert.runModal()
         completionHandler(response == .alertFirstButtonReturn)
     }
-}
-
-func loadNewTabPage(in webView: WKWebView) {
-    webView.loadHTMLString(HTMLConstants.newTabHTML, baseURL: nil)
 }

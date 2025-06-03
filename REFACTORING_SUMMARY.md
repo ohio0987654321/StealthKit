@@ -5,6 +5,13 @@ This document summarizes the comprehensive refactoring performed on the Swift br
 
 ## ✅ Completed Refactoring Tasks
 
+### Latest Update: Native macOS Background for New Tabs
+- **Removed `HTMLConstants.swift`**: Completely eliminated HTML template for new tabs
+- **Native macOS background**: New tabs now display rich semi-transparent macOS background using `.regularMaterial`
+- **EmptyTabView**: Created new SwiftUI view with native macOS styling instead of WebView
+- **Seamless navigation**: Empty tabs automatically convert to WebViews when user navigates to a URL
+- **Enhanced TabType**: Added `.empty` case to support native background tabs
+
 ### 1. Centralized Constants
 - **Created `UIConstants.swift`**: Centralized all magic numbers including:
   - Window dimensions (min/default sizes)
@@ -16,14 +23,14 @@ This document summarizes the comprehensive refactoring performed on the Swift br
   - Corner radius values
   - Spacing constants
 
-- **Created `HTMLConstants.swift`**: Moved hardcoded HTML content for new tab page to a dedicated constants file
+- **~~Created `HTMLConstants.swift`~~**: ~~Moved hardcoded HTML content for new tab page to a dedicated constants file~~ [REMOVED - see latest update]
 
 ### 2. Removed Unused/Unnecessary Code
 - **TabBarView.swift**: Removed incomplete TODO items:
   - "Duplicate Tab" context menu item (was unimplemented)
   - "Close Other Tabs" context menu item (was unimplemented)
 
-- **WebViewCoordinator.swift**: Removed unused `createNewTabHTML()` function
+- **WebViewCoordinator.swift**: Removed unused `createNewTabHTML()` function and later removed `loadNewTabPage()` function
 
 - **UITheme.swift**: Simplified over-engineered theme system:
   - Removed complex `MaterialType` enum with multiple variants
@@ -32,6 +39,7 @@ This document summarizes the comprehensive refactoring performed on the Swift br
 
 ### 3. Fixed UI Issues
 - **Tab Bar Border**: Changed from thin 0.5pt gray border to bold 1pt black border for better visibility
+- **Individual Tab Borders**: Added black border to right side of each tab for better visual separation
 - **Fixed broken component references** after theme system simplification
 
 ### 4. Replaced Magic Numbers with Constants
@@ -58,12 +66,11 @@ Updated all files to use centralized constants:
 - **Cleaner component hierarchy**: Removed redundant themed components
 - **Fixed compilation errors**: Resolved all broken references
 
-## 📁 New File Structure
+## 📁 Updated File Structure
 ```
 Sources/SwiftBrowser/Core/
 ├── Constants/
-│   ├── UIConstants.swift      [NEW]
-│   └── HTMLConstants.swift    [NEW]
+│   └── UIConstants.swift      [NEW]
 ├── Models/
 ├── Services/
 └── UI/
@@ -111,7 +118,7 @@ Sources/SwiftBrowser/Core/
 
 ## 📋 Files Modified
 1. `Sources/SwiftBrowser/Core/Constants/UIConstants.swift` - [NEW]
-2. `Sources/SwiftBrowser/Core/Constants/HTMLConstants.swift` - [NEW]
+2. ~~`Sources/SwiftBrowser/Core/Constants/HTMLConstants.swift` - [NEW]~~ [REMOVED]
 3. `Sources/SwiftBrowser/Views/TabBarView.swift` - [REFACTORED]
 4. `Sources/SwiftBrowser/Views/BrowserView.swift` - [REFACTORED]
 5. `Sources/SwiftBrowser/App/SwiftBrowserApp.swift` - [REFACTORED]
@@ -119,5 +126,7 @@ Sources/SwiftBrowser/Core/
 7. `Sources/SwiftBrowser/Core/UI/UITheme.swift` - [SIMPLIFIED]
 8. `Sources/SwiftBrowser/Core/UI/UIComponents.swift` - [CLEANED]
 9. `Sources/SwiftBrowser/WebKit/WebViewCoordinator.swift` - [REFACTORED]
+10. `Sources/SwiftBrowser/Views/EmptyTabView.swift` - [NEW]
+11. `Sources/SwiftBrowser/Core/Models/Tab.swift` - [ENHANCED]
 
 The refactoring successfully achieved all stated goals while maintaining full functionality and improving the codebase quality.
