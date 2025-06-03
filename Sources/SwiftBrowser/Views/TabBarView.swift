@@ -7,20 +7,19 @@ struct TabBarView: View {
     let onTabClose: (Tab) -> Void
     
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 0) {
-                ForEach(tabs) { tab in
-                    TabItemView(
-                        tab: tab,
-                        isSelected: selectedTabId == tab.id,
-                        onSelect: { onTabSelect(tab.id) },
-                        onClose: { onTabClose(tab) }
-                    )
-                }
+        HStack(spacing: 0) {
+            ForEach(tabs) { tab in
+                TabItemView(
+                    tab: tab,
+                    isSelected: selectedTabId == tab.id,
+                    onSelect: { onTabSelect(tab.id) },
+                    onClose: { onTabClose(tab) }
+                )
+                .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, 8)
         }
         .frame(height: 36)
+        .clipped()
         .background(UITheme.Colors.backgroundSecondary)
         .overlay(
             Rectangle()
@@ -40,16 +39,26 @@ struct TabItemView: View {
     
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: "globe")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .frame(width: 12, height: 12)
+            // Dynamic favicon with fallback
+            Group {
+                if let favicon = tab.favicon {
+                    favicon
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                } else {
+                    Image(systemName: "doc.text")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .frame(width: 12, height: 12)
+            .clipped()
             
             Text(tab.title.isEmpty ? "New Tab" : tab.title)
                 .font(.caption)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .frame(maxWidth: 140)
+                .frame(maxWidth: .infinity, alignment: .leading)
             
             if isHovered || isSelected {
                 Button(action: onClose) {
@@ -64,12 +73,8 @@ struct TabItemView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: 6)
+            Rectangle()
                 .fill(isSelected ? UITheme.Colors.backgroundPrimary : Color.clear)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(isSelected ? UITheme.Colors.border : Color.clear, lineWidth: 0.5)
         )
         .contentShape(Rectangle())
         .onTapGesture { onSelect() }
