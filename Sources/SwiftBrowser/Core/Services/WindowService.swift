@@ -3,6 +3,11 @@ import SwiftUI
 import AppKit
 import WebKit
 
+/// Delegate protocol for notifying about panel recreations
+protocol WindowServicePanelDelegate: AnyObject {
+    func windowService(_ service: WindowService, didRecreatePanel oldPanel: NSPanel, newPanel: NSPanel)
+}
+
 /// Unified window management service that handles all window-related functionality
 /// Replaces the fragmented StealthManager + WindowManager + WindowCloaking architecture
 @Observable
@@ -12,6 +17,7 @@ class WindowService {
     // MARK: - Window State
     private var managedWindows: Set<NSWindow> = []
     private var statusItem: NSStatusItem?
+    weak var panelDelegate: WindowServicePanelDelegate?
     
     // MARK: - Window Properties
     var isTransparencyEnabled: Bool = false {
@@ -321,14 +327,13 @@ class WindowService {
             defer: false
         )
         
-        // Transfer all properties safely
+        // Transfer toolbar but NOT content view - let PanelAppDelegate handle content
         if let existingToolbar = toolbar {
             newPanel.toolbar = existingToolbar
         }
         
-        if let content = contentView {
-            newPanel.contentView = content
-        }
+        // DON'T transfer content view here - PanelAppDelegate will handle it
+        // This prevents double assignment that confuses NSHostingController
         
         // Restore panel properties
         newPanel.setFrame(frame, display: false)
@@ -345,17 +350,19 @@ class WindowService {
             newPanel.orderFront(nil)
         }
         
+        // Notify delegate about panel recreation BEFORE cleanup
+        // This allows PanelAppDelegate to update references and preserve hosting controller
+        panelDelegate?.windowService(self, didRecreatePanel: panel, newPanel: newPanel)
+        
         // Clean up - unregister old panel and register new one
         unregisterWindow(panel)
         registerPanel(newPanel)
         
+        // DON'T close the old panel immediately - let the delegate handle it
         panel.orderOut(nil)
         
-        // Safe cleanup
+        // Ensure toolbar visibility on new panel
         DispatchQueue.main.async {
-            panel.close()
-            
-            // Ensure toolbar visibility
             if let toolbar = newPanel.toolbar {
                 toolbar.isVisible = true
             }
@@ -371,36 +378,6 @@ class WindowService {
         configuration.mediaTypesRequiringUserActionForPlayback = [.all]
     }
     
-    // MARK: - Window Creation
-    func createWindow(
-        contentRect: NSRect = NSRect(x: 100, y: 100, width: 1200, height: 800),
-        styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
-    ) -> NSWindow {
-        let window = NSWindow(
-            contentRect: contentRect,
-            styleMask: styleMask,
-            backing: .buffered,
-            defer: false
-        )
-        
-        registerWindow(window)
-        return window
-    }
-    
-    func createPanel(
-        contentRect: NSRect = NSRect(x: 100, y: 100, width: 1200, height: 800),
-        styleMask: NSPanel.StyleMask = [.nonactivatingPanel, .titled, .closable, .resizable, .fullSizeContentView]
-    ) -> NSPanel {
-        let panel = NSPanel(
-            contentRect: contentRect,
-            styleMask: styleMask,
-            backing: .buffered,
-            defer: false
-        )
-        
-        registerPanel(panel)
-        return panel
-    }
 }
 
 // MARK: - Window Delegate

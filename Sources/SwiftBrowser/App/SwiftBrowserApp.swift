@@ -1,29 +1,16 @@
 import SwiftUI
+import AppKit
 
-@main
-struct SwiftBrowserApp: App {
-    @NSApplicationDelegateAdaptor(PanelAppDelegate.self) var appDelegate
-    
-    var body: some Scene {
-        // Empty scene - actual panel is created by PanelAppDelegate
-        WindowGroup {
-            EmptyView()
-        }
-        .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 0, height: 0)
-        .windowResizability(.contentSize)
-        .commands {
-            BrowserCommands()
-        }
-    }
-}
+// Browser commands for menu bar integration
+// Note: Commands are now registered directly in PanelAppDelegate
 struct BrowserCommands: Commands {
     var body: some Commands {
-        CommandGroup(after: .newItem) {
+        // Replace default "New" behavior with "New Tab"
+        CommandGroup(replacing: .newItem) {
             Button("New Tab") {
                 NotificationCenter.default.post(name: .newTab, object: nil)
             }
-            .keyboardShortcut("t", modifiers: .command)
+            .keyboardShortcut("n", modifiers: .command)
         }
         
         CommandGroup(after: .newItem) {
