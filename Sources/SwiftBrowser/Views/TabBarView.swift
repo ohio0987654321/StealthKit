@@ -70,8 +70,8 @@ struct TabItemView: View {
                 .frame(width: 12, height: 12)
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
         .background(
             Rectangle()
                 .fill(isSelected ? UITheme.Colors.backgroundPrimary : Color.clear)
