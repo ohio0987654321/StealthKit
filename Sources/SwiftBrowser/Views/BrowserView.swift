@@ -63,6 +63,8 @@ struct BrowserView: View {
                                 SettingsSecurityPrivacyView()
                             case .history:
                                 HistoryView()
+                            case .cookies:
+                                CookieManagementView()
                             case .welcome:
                                 WelcomeView()
                             }
@@ -191,6 +193,8 @@ struct BrowserView: View {
                     selectedSidebarItem = .settingsSecurityPrivacy
                 case .history:
                     selectedSidebarItem = .settingsHistory
+                case .cookies:
+                    selectedSidebarItem = .settingsCookies
                 case .welcome:
                     selectedSidebarItem = .tab(tabId)
                 }
@@ -223,6 +227,11 @@ struct BrowserView: View {
             addressText = ""
         case .settingsHistory:
             let tab = viewModel.createSettingsTab(type: .history)
+            currentTab = tab
+            currentWebView = nil
+            addressText = ""
+        case .settingsCookies:
+            let tab = viewModel.createSettingsTab(type: .cookies)
             currentTab = tab
             currentWebView = nil
             addressText = ""

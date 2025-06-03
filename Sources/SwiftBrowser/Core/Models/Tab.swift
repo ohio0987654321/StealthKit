@@ -13,6 +13,7 @@ enum SettingsType {
     case windowUtilities
     case securityPrivacy
     case history
+    case cookies
     case welcome
 }
 
@@ -56,6 +57,9 @@ class Tab: Identifiable {
         case .history:
             self.title = "History"
             self.favicon = Image(systemName: "clock")
+        case .cookies:
+            self.title = "Cookie Management"
+            self.favicon = Image(systemName: "list.bullet.rectangle")
         case .welcome:
             self.title = "Welcome"
             self.favicon = Image(systemName: "safari")

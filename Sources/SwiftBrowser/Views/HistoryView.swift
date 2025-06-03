@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import AppKit
 
 struct HistoryView: View {
     @State private var historyManager = HistoryManager.shared
@@ -293,15 +294,9 @@ struct HistoryItemRow: View {
             }
             .buttonStyle(PlainButtonStyle())
             
-            // Favicon placeholder
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color.blue.opacity(0.1))
+            // Favicon
+            FaviconView(faviconData: item.faviconData, url: item.url)
                 .frame(width: 16, height: 16)
-                .overlay(
-                    Image(systemName: "globe")
-                        .font(.caption2)
-                        .foregroundColor(.blue)
-                )
             
             // Content
             VStack(alignment: .leading, spacing: 2) {

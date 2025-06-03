@@ -95,7 +95,11 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
            !url.absoluteString.hasPrefix("about:") &&
            !url.absoluteString.hasPrefix("data:") {
             let title = webView.title ?? url.host ?? "Untitled"
-            HistoryManager.shared.addHistoryItem(title: title, url: url)
+            
+            // Extract and cache favicon
+            extractFavicon(from: webView) { faviconData in
+                HistoryManager.shared.addHistoryItem(title: title, url: url, faviconData: faviconData)
+            }
         }
         
         onNavigationChange(tab)
@@ -178,5 +182,63 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
             let userScript = WKUserScript(source: script, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
             webView.configuration.userContentController.addUserScript(userScript)
         }
+    }
+    
+    private func extractFavicon(from webView: WKWebView, completion: @escaping (String?) -> Void) {
+        guard let url = webView.url else {
+            completion(nil)
+            return
+        }
+        
+        let domain = FaviconCache.domain(from: url)
+        
+        // Check if we already have a favicon cached
+        if let cachedFavicon = FaviconCache.shared.getFaviconData(for: domain) {
+            completion(cachedFavicon)
+            return
+        }
+        
+        // Extract favicon URL using JavaScript
+        let faviconScript = """
+        (function() {
+            var favicon = document.querySelector('link[rel*="icon"]');
+            if (favicon) {
+                return favicon.href;
+            }
+            
+            // Fallback to default favicon location
+            return window.location.origin + '/favicon.ico';
+        })();
+        """
+        
+        webView.evaluateJavaScript(faviconScript) { result, error in
+            guard let faviconURLString = result as? String,
+                  let faviconURL = URL(string: faviconURLString) else {
+                completion(nil)
+                return
+            }
+            
+            // Download favicon
+            self.downloadFavicon(from: faviconURL, domain: domain, completion: completion)
+        }
+    }
+    
+    private func downloadFavicon(from url: URL, domain: String, completion: @escaping (String?) -> Void) {
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            guard let data = data,
+                  error == nil,
+                  let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                completion(nil)
+                return
+            }
+            
+            // Store in cache
+            FaviconCache.shared.setFaviconData(data, for: domain)
+            
+            // Return base64 string
+            let base64String = data.base64EncodedString()
+            completion(base64String)
+        }.resume()
     }
 }

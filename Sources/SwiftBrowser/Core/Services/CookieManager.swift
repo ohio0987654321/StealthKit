@@ -93,4 +93,23 @@ class CookieManager {
     func getCookies(for domain: String) -> [CookieItem] {
         return cookiesByDomain[domain] ?? []
     }
+    
+    // Synchronous wrapper methods for UI
+    func refreshCookies() {
+        Task {
+            await loadCookies()
+        }
+    }
+    
+    func deleteAllCookies() {
+        Task {
+            await clearAllCookies()
+        }
+    }
+    
+    func deleteCookies(for domain: String) {
+        Task {
+            await clearCookiesForDomain(domain)
+        }
+    }
 }

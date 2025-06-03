@@ -13,15 +13,18 @@ class HistoryManager {
         loadHistory()
     }
     
-    func addHistoryItem(title: String, url: URL) {
+    func addHistoryItem(title: String, url: URL, faviconData: String? = nil) {
+        let domain = FaviconCache.domain(from: url)
+        let favicon = faviconData ?? FaviconCache.shared.getFaviconData(for: domain)
+        
         // Check if item already exists
         if let existingIndex = historyItems.firstIndex(where: { $0.url == url }) {
             let existingItem = historyItems[existingIndex]
             historyItems.remove(at: existingIndex)
-            let updatedItem = HistoryItem(title: title, url: url, visitDate: Date(), visitCount: existingItem.visitCount + 1)
+            let updatedItem = HistoryItem(title: title, url: url, visitDate: Date(), visitCount: existingItem.visitCount + 1, faviconData: favicon)
             historyItems.insert(updatedItem, at: 0)
         } else {
-            let historyItem = HistoryItem(title: title, url: url, visitDate: Date())
+            let historyItem = HistoryItem(title: title, url: url, visitDate: Date(), faviconData: favicon)
             historyItems.insert(historyItem, at: 0)
         }
         
@@ -67,7 +70,8 @@ class HistoryManager {
                     title: savedItem.title,
                     url: url,
                     visitDate: savedItem.visitDate,
-                    visitCount: savedItem.visitCount
+                    visitCount: savedItem.visitCount,
+                    faviconData: savedItem.faviconData
                 )
             }
         } catch {
@@ -81,7 +85,8 @@ class HistoryManager {
                 title: item.title,
                 urlString: item.url.absoluteString,
                 visitDate: item.visitDate,
-                visitCount: item.visitCount
+                visitCount: item.visitCount,
+                faviconData: item.faviconData
             )
         }
         
@@ -102,4 +107,5 @@ private struct SavedHistoryItem: Codable {
     let urlString: String
     let visitDate: Date
     let visitCount: Int
+    let faviconData: String?
 }

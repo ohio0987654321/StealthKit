@@ -35,12 +35,14 @@ struct HistoryItem: Identifiable {
     let url: URL
     let visitDate: Date
     let visitCount: Int
+    let faviconData: String?
     
-    init(title: String, url: URL, visitDate: Date, visitCount: Int = 1) {
+    init(title: String, url: URL, visitDate: Date, visitCount: Int = 1, faviconData: String? = nil) {
         self.title = title
         self.url = url
         self.visitDate = visitDate
         self.visitCount = visitCount
+        self.faviconData = faviconData
     }
 }
 

@@ -7,6 +7,7 @@ enum SidebarItem: Hashable {
     case settingsWindowUtilities
     case settingsSecurityPrivacy
     case settingsHistory
+    case settingsCookies
     case tab(UUID)
 }
 
@@ -117,6 +118,14 @@ struct SidebarSettingsItems: View {
                 title: "History",
                 isSelected: selectedItem == .settingsHistory,
                 onSelect: { onSelectionChange(.settingsHistory) },
+                indentLevel: 0
+            )
+            
+            SidebarRowView(
+                icon: "list.bullet.rectangle",
+                title: "Cookie Management",
+                isSelected: selectedItem == .settingsCookies,
+                onSelect: { onSelectionChange(.settingsCookies) },
                 indentLevel: 0
             )
         }
