@@ -36,6 +36,7 @@ struct TabItemView: View {
     let onSelect: () -> Void
     let onClose: () -> Void
     @State private var isHovered = false
+    @State private var isCloseHovered = false
     
     var body: some View {
         HStack(spacing: 6) {
@@ -67,7 +68,16 @@ struct TabItemView: View {
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
-                .frame(width: 12, height: 12)
+                .frame(width: 18, height: 18)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(isCloseHovered ? Color.white.opacity(0.2) : Color.clear)
+                )
+                .onHover { hovering in
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        isCloseHovered = hovering
+                    }
+                }
             }
         }
         .padding(.horizontal, 12)

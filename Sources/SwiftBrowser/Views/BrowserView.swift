@@ -101,31 +101,30 @@ struct BrowserView: View {
                 }
                 
                 ToolbarItem(placement: .principal) {
-                    HStack(spacing: UITheme.Spacing.small) {
-                        TextField("Enter URL or search", text: $addressText)
-                            .textFieldStyle(.roundedBorder)
-                            .font(UITheme.Typography.addressBar)
-                            .focused($isAddressBarFocused)
-                            .onSubmit {
-                                handleAddressSubmit()
-                            }
-                            .onChange(of: getCurrentTab()?.url) { _, newURL in
-                                if !isAddressBarFocused && isWebContentActive() {
-                                    addressText = newURL?.absoluteString ?? ""
-                                }
-                            }
-                            .frame(minWidth: 300, maxWidth: 300)
-                            .layoutPriority(1)
-                        
-                        ThemedToolbarButton(
-                            icon: "plus"
-                        ) {
-                            let newTab = viewModel.createNewTab()
-                            selectedSidebarItem = .tab(newTab.id)
-                            currentContent = .webTab(newTab)
-                            currentWebView = nil
-                            addressText = ""
+                    TextField("Enter URL or search", text: $addressText)
+                        .textFieldStyle(.roundedBorder)
+                        .font(UITheme.Typography.addressBar)
+                        .focused($isAddressBarFocused)
+                        .onSubmit {
+                            handleAddressSubmit()
                         }
+                        .onChange(of: getCurrentTab()?.url) { _, newURL in
+                            if !isAddressBarFocused && isWebContentActive() {
+                                addressText = newURL?.absoluteString ?? ""
+                            }
+                        }
+                        .frame(minWidth: 300, maxWidth: 300)
+                }
+                
+                ToolbarItem(placement: .primaryAction) {
+                    ThemedToolbarButton(
+                        icon: "plus"
+                    ) {
+                        let newTab = viewModel.createNewTab()
+                        selectedSidebarItem = .tab(newTab.id)
+                        currentContent = .webTab(newTab)
+                        currentWebView = nil
+                        addressText = ""
                     }
                 }
             }

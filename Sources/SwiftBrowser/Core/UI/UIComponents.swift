@@ -91,8 +91,7 @@ struct ThemedButtonStyle: ButtonStyle {
                     .opacity(configuration.isPressed ? 0.7 : 1.0)
             case .toolbar:
                 RoundedRectangle(cornerRadius: UITheme.CornerRadius.button)
-                    .fill(UITheme.Colors.backgroundTertiary)
-                    .opacity(configuration.isPressed ? 0.5 : 0.6)
+                    .fill(Color.clear)
             case .destructive:
                 RoundedRectangle(cornerRadius: UITheme.CornerRadius.button)
                     .fill(Color.red)
@@ -109,9 +108,11 @@ struct ThemedButtonStyle: ButtonStyle {
             switch style {
             case .primary, .destructive:
                 EmptyView()
-            case .secondary, .toolbar:
+            case .secondary:
                 RoundedRectangle(cornerRadius: UITheme.CornerRadius.button)
                     .stroke(UITheme.Colors.border, lineWidth: 0.5)
+            case .toolbar:
+                EmptyView()
             case .plain:
                 EmptyView()
             }
@@ -196,6 +197,7 @@ struct ThemedToolbarButton: View {
     let icon: String
     let action: () -> Void
     let isDisabled: Bool
+    @State private var isHovered = false
     
     init(icon: String, isDisabled: Bool = false, action: @escaping () -> Void) {
         self.icon = icon
@@ -209,9 +211,18 @@ struct ThemedToolbarButton: View {
                 .font(UITheme.Typography.toolbarButton)
                 .foregroundStyle(UITheme.Colors.primary)
         }
-        .themedButton(style: .toolbar)
+        .buttonStyle(.plain)
         .disabled(isDisabled)
         .frame(width: 28, height: 28)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isHovered ? Color.white.opacity(0.15) : Color.clear)
+        )
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering && !isDisabled
+            }
+        }
     }
 }
 
