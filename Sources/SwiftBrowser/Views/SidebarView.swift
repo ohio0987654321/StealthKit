@@ -1,11 +1,6 @@
 import SwiftUI
 
-enum ContentType {
-    case settingsBrowserUtilities
-    case settingsWindowUtilities
-    case webTab(Tab)
-    case welcome
-}
+// ContentType removed - everything is now a unified web tab
 
 enum SidebarItem: Hashable {
     case settingsBrowserUtilities

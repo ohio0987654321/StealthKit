@@ -8,7 +8,7 @@ struct BrowserView: View {
     @FocusState private var isAddressBarFocused: Bool
     @State private var currentWebView: WKWebView?
     @State private var selectedSidebarItem: SidebarItem? = nil
-    @State private var currentContent: ContentType = .welcome
+    @State private var currentTab: Tab? = nil
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -26,7 +26,7 @@ struct BrowserView: View {
                 if !viewModel.tabs.isEmpty {
                     TabBarView(
                         tabs: viewModel.tabs,
-                        selectedTabId: getCurrentTab()?.id,
+                        selectedTabId: currentTab?.id,
                         onTabSelect: handleTabSelection,
                         onTabClose: handleCloseSpecificTab
                     )
@@ -34,115 +34,119 @@ struct BrowserView: View {
                 
                 // Main content area
                 ZStack {
-                switch currentContent {
-                case .settingsBrowserUtilities:
-                    SettingsBrowserUtilitiesView()
-                case .settingsWindowUtilities:
-                    SettingsWindowUtilitiesView()
-                case .webTab(let tab):
-                    switch tab.tabType {
-                    case .web:
-                        WebView(
-                            tab: .constant(tab),
-                            onNavigationChange: { updatedTab in
-                                if let index = viewModel.tabs.firstIndex(where: { $0.id == updatedTab.id }) {
-                                    viewModel.tabs[index] = updatedTab
+                    if let tab = currentTab {
+                        switch tab.tabType {
+                        case .web:
+                            WebView(
+                                tab: .constant(tab),
+                                onNavigationChange: { updatedTab in
+                                    if let index = viewModel.tabs.firstIndex(where: { $0.id == updatedTab.id }) {
+                                        viewModel.tabs[index] = updatedTab
+                                        currentTab = updatedTab
+                                    }
+                                },
+                                onWebViewCreated: { webView in
+                                    currentWebView = webView
                                 }
-                            },
-                            onWebViewCreated: { webView in
-                                currentWebView = webView
+                            )
+                            .id(tab.id)
+                        case .settings(let settingsType):
+                            switch settingsType {
+                            case .browserUtilities:
+                                SettingsBrowserUtilitiesView()
+                            case .windowUtilities:
+                                SettingsWindowUtilitiesView()
+                            case .welcome:
+                                WelcomeView()
                             }
-                        )
-                        .id(tab.id)
-                    case .settings(let settingsType):
-                        switch settingsType {
-                        case .browserUtilities:
-                            SettingsBrowserUtilitiesView()
-                        case .windowUtilities:
-                            SettingsWindowUtilitiesView()
                         }
+                    } else {
+                        // No tabs - show welcome as fallback
+                        WelcomeView()
                     }
-                case .welcome:
-                    WelcomeView()
                 }
-            }
-            .navigationTitle("")
-            .toolbar {
-                ToolbarItemGroup(placement: .navigation) {
-                    HStack(spacing: UITheme.Spacing.xs) {
-                        ThemedToolbarButton(
-                            icon: "chevron.left",
-                            isDisabled: !(getCurrentTab()?.canGoBack ?? false) || !isWebContentActive()
-                        ) {
-                            if let webView = getCurrentWebView() {
-                                webView.goBack()
-                            }
-                        }
-                        
-                        ThemedToolbarButton(
-                            icon: "chevron.right",
-                            isDisabled: !(getCurrentTab()?.canGoForward ?? false) || !isWebContentActive()
-                        ) {
-                            if let webView = getCurrentWebView() {
-                                webView.goForward()
-                            }
-                        }
-                        
-                        ThemedToolbarButton(
-                            icon: getCurrentTab()?.isLoading == true ? "xmark" : "arrow.clockwise",
-                            isDisabled: !isWebContentActive()
-                        ) {
-                            if let webView = getCurrentWebView() {
-                                if getCurrentTab()?.isLoading == true {
-                                    webView.stopLoading()
-                                } else {
-                                    webView.reload()
+                .navigationTitle("")
+                .toolbar {
+                    ToolbarItemGroup(placement: .navigation) {
+                        HStack(spacing: UITheme.Spacing.xs) {
+                            ThemedToolbarButton(
+                                icon: "chevron.left",
+                                isDisabled: !(currentTab?.canGoBack ?? false) || !isWebContentActive()
+                            ) {
+                                if let webView = getCurrentWebView() {
+                                    webView.goBack()
                                 }
                             }
-                        }
-                    }
-                }
-                
-                ToolbarItem(placement: .principal) {
-                    TextField("Enter URL or search", text: $addressText)
-                        .textFieldStyle(.roundedBorder)
-                        .font(UITheme.Typography.addressBar)
-                        .focused($isAddressBarFocused)
-                        .onSubmit {
-                            handleAddressSubmit()
-                        }
-                        .onChange(of: getCurrentTab()?.url) { _, newURL in
-                            if !isAddressBarFocused && isWebContentActive() {
-                                addressText = newURL?.absoluteString ?? ""
+                            
+                            ThemedToolbarButton(
+                                icon: "chevron.right",
+                                isDisabled: !(currentTab?.canGoForward ?? false) || !isWebContentActive()
+                            ) {
+                                if let webView = getCurrentWebView() {
+                                    webView.goForward()
+                                }
+                            }
+                            
+                            ThemedToolbarButton(
+                                icon: currentTab?.isLoading == true ? "xmark" : "arrow.clockwise",
+                                isDisabled: !isWebContentActive()
+                            ) {
+                                if let webView = getCurrentWebView() {
+                                    if currentTab?.isLoading == true {
+                                        webView.stopLoading()
+                                    } else {
+                                        webView.reload()
+                                    }
+                                }
                             }
                         }
-                        .frame(minWidth: 300, maxWidth: 300)
-                }
-                
-                ToolbarItem(placement: .primaryAction) {
-                    ThemedToolbarButton(
-                        icon: "plus"
-                    ) {
-                        let newTab = viewModel.createNewTab()
-                        selectedSidebarItem = .tab(newTab.id)
-                        currentContent = .webTab(newTab)
-                        currentWebView = nil
-                        addressText = ""
+                    }
+                    
+                    ToolbarItem(placement: .principal) {
+                        TextField("Enter URL or search", text: $addressText)
+                            .textFieldStyle(.roundedBorder)
+                            .font(UITheme.Typography.addressBar)
+                            .focused($isAddressBarFocused)
+                            .onSubmit {
+                                handleAddressSubmit()
+                            }
+                            .onChange(of: currentTab?.url) { _, newURL in
+                                if !isAddressBarFocused && isWebContentActive() {
+                                    addressText = newURL?.absoluteString ?? ""
+                                }
+                            }
+                            .frame(minWidth: 300, maxWidth: 300)
+                    }
+                    
+                    ToolbarItem(placement: .primaryAction) {
+                        ThemedToolbarButton(
+                            icon: "plus"
+                        ) {
+                            let newTab = viewModel.createNewTab()
+                            selectedSidebarItem = .tab(newTab.id)
+                            currentTab = newTab
+                            currentWebView = nil
+                            addressText = ""
+                        }
                     }
                 }
-            }
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
-
         .frame(minWidth: 900, minHeight: 600)
         .managedWindow()
         .onAppear {
             setupKeyboardShortcuts()
             setupWindowManager()
-            if let firstTab = viewModel.tabs.first {
+            // Initialize with welcome tab if no tabs exist
+            if viewModel.tabs.isEmpty {
+                let welcomeTab = Tab(settingsType: .welcome)
+                viewModel.tabs.append(welcomeTab)
+                currentTab = welcomeTab
+                selectedSidebarItem = .tab(welcomeTab.id)
+            } else if let firstTab = viewModel.tabs.first {
+                currentTab = firstTab
                 selectedSidebarItem = .tab(firstTab.id)
-                currentContent = .webTab(firstTab)
             }
         }
         .onDisappear {
@@ -154,15 +158,8 @@ struct BrowserView: View {
         return currentWebView
     }
     
-    private func getCurrentTab() -> Tab? {
-        if case .webTab(let tab) = currentContent {
-            return tab
-        }
-        return nil
-    }
-    
     private func isWebContentActive() -> Bool {
-        if case .webTab(let tab) = currentContent,
+        if let tab = currentTab,
            case .web = tab.tabType {
             return true
         }
@@ -181,10 +178,12 @@ struct BrowserView: View {
                     selectedSidebarItem = .settingsBrowserUtilities
                 case .windowUtilities:
                     selectedSidebarItem = .settingsWindowUtilities
+                case .welcome:
+                    selectedSidebarItem = .tab(tabId)
                 }
             }
             
-            currentContent = .webTab(tab)
+            currentTab = tab
             viewModel.selectTab(at: viewModel.tabs.firstIndex(where: { $0.id == tabId }) ?? 0)
             addressText = tab.url?.absoluteString ?? ""
         }
@@ -196,17 +195,17 @@ struct BrowserView: View {
         switch item {
         case .settingsBrowserUtilities:
             let tab = viewModel.createSettingsTab(type: .browserUtilities)
-            currentContent = .webTab(tab)
+            currentTab = tab
             currentWebView = nil
             addressText = ""
         case .settingsWindowUtilities:
             let tab = viewModel.createSettingsTab(type: .windowUtilities)
-            currentContent = .webTab(tab)
+            currentTab = tab
             currentWebView = nil
             addressText = ""
         case .tab(let tabId):
             if let tab = viewModel.tabs.first(where: { $0.id == tabId }) {
-                currentContent = .webTab(tab)
+                currentTab = tab
                 viewModel.selectTab(at: viewModel.tabs.firstIndex(where: { $0.id == tabId }) ?? 0)
                 addressText = tab.url?.absoluteString ?? ""
             }
@@ -217,15 +216,28 @@ struct BrowserView: View {
         isAddressBarFocused = false
         
         if let url = createURL(from: addressText) {
-            if case .webTab(let currentTab) = currentContent {
-                currentTab.url = url
-                if let webView = getCurrentWebView() {
-                    webView.load(URLRequest(url: url))
+            // If current tab is a settings tab, convert it to a web tab
+            if let tab = currentTab {
+                if case .settings = tab.tabType {
+                    // Convert settings tab to web tab
+                    let newWebTab = Tab(url: url)
+                    if let index = viewModel.tabs.firstIndex(where: { $0.id == tab.id }) {
+                        viewModel.tabs[index] = newWebTab
+                        currentTab = newWebTab
+                        selectedSidebarItem = .tab(newWebTab.id)
+                    }
+                } else {
+                    // Current tab is already a web tab, just navigate
+                    tab.url = url
+                    if let webView = getCurrentWebView() {
+                        webView.load(URLRequest(url: url))
+                    }
                 }
             } else {
+                // No current tab, create a new one
                 let newTab = viewModel.createNewTab(with: url)
                 selectedSidebarItem = .tab(newTab.id)
-                currentContent = .webTab(newTab)
+                currentTab = newTab
             }
         }
     }
@@ -260,7 +272,7 @@ struct BrowserView: View {
         ) { _ in
             let newTab = viewModel.createNewTab()
             selectedSidebarItem = .tab(newTab.id)
-            currentContent = .webTab(newTab)
+            currentTab = newTab
             currentWebView = nil
             addressText = ""
         }
@@ -279,7 +291,7 @@ struct BrowserView: View {
             queue: .main
         ) { _ in
             if let webView = getCurrentWebView() {
-                if getCurrentTab()?.isLoading == true {
+                if currentTab?.isLoading == true {
                     webView.stopLoading()
                 } else {
                     webView.reload()
@@ -300,28 +312,26 @@ struct BrowserView: View {
     }
     
     private func handleCloseTab() {
-        if case .webTab(let currentTab) = currentContent {
-            if let index = viewModel.tabs.firstIndex(where: { $0.id == currentTab.id }) {
+        if let tab = currentTab {
+            if let index = viewModel.tabs.firstIndex(where: { $0.id == tab.id }) {
                 viewModel.closeTab(at: index)
                 
                 if viewModel.tabs.isEmpty {
-                    selectedSidebarItem = nil
-                    currentContent = .welcome
+                    // Create a new welcome tab when all tabs are closed
+                    let welcomeTab = Tab(settingsType: .welcome)
+                    viewModel.tabs.append(welcomeTab)
+                    selectedSidebarItem = .tab(welcomeTab.id)
+                    currentTab = welcomeTab
                     currentWebView = nil
                     addressText = ""
                 } else {
                     let newIndex = min(index, viewModel.tabs.count - 1)
                     let newTab = viewModel.tabs[newIndex]
                     selectedSidebarItem = .tab(newTab.id)
-                    currentContent = .webTab(newTab)
+                    currentTab = newTab
                     addressText = newTab.url?.absoluteString ?? ""
                     viewModel.selectTab(at: newIndex)
                 }
-            }
-        } else if case .welcome = currentContent {
-            // If we're on the Welcome page and Cmd+W is pressed, close the window
-            if let window = NSApp.keyWindow {
-                window.close()
             }
         }
     }
@@ -331,15 +341,18 @@ struct BrowserView: View {
             viewModel.closeTab(at: index)
             
             if viewModel.tabs.isEmpty {
-                selectedSidebarItem = nil
-                currentContent = .welcome
+                // Create a new welcome tab when all tabs are closed
+                let welcomeTab = Tab(settingsType: .welcome)
+                viewModel.tabs.append(welcomeTab)
+                selectedSidebarItem = .tab(welcomeTab.id)
+                currentTab = welcomeTab
                 currentWebView = nil
             } else {
-                if case .webTab(let currentTab) = currentContent, currentTab.id == tab.id {
+                if currentTab?.id == tab.id {
                     let newIndex = min(index, viewModel.tabs.count - 1)
                     let newTab = viewModel.tabs[newIndex]
                     selectedSidebarItem = .tab(newTab.id)
-                    currentContent = .webTab(newTab)
+                    currentTab = newTab
                     addressText = newTab.url?.absoluteString ?? ""
                     viewModel.selectTab(at: newIndex)
                 }

@@ -10,6 +10,7 @@ enum TabType {
 enum SettingsType {
     case browserUtilities
     case windowUtilities
+    case welcome
 }
 
 @Observable
@@ -42,6 +43,9 @@ class Tab: Identifiable {
         case .windowUtilities:
             self.title = "Window Utilities"
             self.favicon = Image(systemName: "macwindow")
+        case .welcome:
+            self.title = "Welcome"
+            self.favicon = Image(systemName: "safari")
         }
     }
     
