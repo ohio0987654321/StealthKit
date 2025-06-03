@@ -3,9 +3,11 @@ import SwiftUI
 import AppKit
 import WebKit
 
-/// Delegate protocol for notifying about panel recreations
+/// Delegate protocol for notifying about panel recreations and activation policy changes
 protocol WindowServicePanelDelegate: AnyObject {
     func windowService(_ service: WindowService, didRecreatePanel oldPanel: NSPanel, newPanel: NSPanel)
+    func windowService(_ service: WindowService, willChangeActivationPolicy isAccessory: Bool)
+    func windowService(_ service: WindowService, didChangeActivationPolicy isAccessory: Bool)
 }
 
 /// Unified window management service that handles all window-related functionality
@@ -261,12 +263,29 @@ class WindowService {
     // MARK: - Accessory App Management
     private func applyAccessoryAppPolicy() {
         DispatchQueue.main.async {
+            // Notify delegate that policy change is starting
+            self.panelDelegate?.windowService(self, willChangeActivationPolicy: self.isAccessoryApp)
+            
             if self.isAccessoryApp {
-                NSApp.setActivationPolicy(.accessory)
+                print("WindowService: Switching to accessory mode")
+                // First set up the status item, then change policy
                 self.setupMenuBarIcon()
+                NSApp.setActivationPolicy(.accessory)
+                
+                // Notify delegate that policy change is complete
+                self.panelDelegate?.windowService(self, didChangeActivationPolicy: self.isAccessoryApp)
             } else {
+                print("WindowService: Switching to regular mode")
+                // Clean up status item first, then restore normal policy
                 self.removeMenuBarIcon()
-                NSApp.setActivationPolicy(.regular)
+                // Add a small delay to ensure clean transition
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    NSApp.setActivationPolicy(.regular)
+                    print("WindowService: Regular mode activated")
+                    
+                    // Notify delegate that policy change is complete
+                    self.panelDelegate?.windowService(self, didChangeActivationPolicy: self.isAccessoryApp)
+                }
             }
         }
     }
@@ -283,12 +302,14 @@ class WindowService {
         menu.addItem(quitItem)
         
         statusItem?.menu = menu
+        print("WindowService: Status item created")
     }
     
     private func removeMenuBarIcon() {
         if let statusItem = statusItem {
             NSStatusBar.system.removeStatusItem(statusItem)
             self.statusItem = nil
+            print("WindowService: Status item removed")
         }
     }
     

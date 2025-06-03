@@ -7,6 +7,7 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     private var mainPanel: NSPanel?
     private var hostingController: NSHostingController<BrowserView>?
     private var isPanelRecreationInProgress = false
+    private var isActivationPolicyChangeInProgress = false
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Set up menu bar
@@ -17,6 +18,24 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
         
         // Create the main panel immediately
         createMainPanel()
+        
+        // Observe activation policy changes to handle menu conflicts
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleActivationPolicyChange),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+    
+    @objc private func handleActivationPolicyChange() {
+        // Ensure our main menu is always properly set when returning to regular mode
+        DispatchQueue.main.async {
+            if NSApp.activationPolicy() == .regular && NSApp.mainMenu == nil {
+                self.setupMenuBar()
+                print("PanelAppDelegate: Restored main menu after activation policy change")
+            }
+        }
     }
     
     private func setupMenuBar() {
@@ -125,10 +144,20 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
             print("PanelAppDelegate: Preventing termination during panel recreation")
             return false
         }
+        
+        // Don't terminate during activation policy changes
+        if isActivationPolicyChangeInProgress {
+            print("PanelAppDelegate: Preventing termination during activation policy change")
+            return false
+        }
+        
         return true
     }
     
     func applicationWillTerminate(_ notification: Notification) {
+        // Clean up notifications
+        NotificationCenter.default.removeObserver(self)
+        
         if let panel = mainPanel {
             WindowService.shared.unregisterWindow(panel)
         }
@@ -177,6 +206,23 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
                 self.isPanelRecreationInProgress = false
                 print("PanelAppDelegate: Panel recreation complete, app termination re-enabled")
             }
+        }
+    }
+    
+    func windowService(_ service: WindowService, willChangeActivationPolicy isAccessory: Bool) {
+        print("PanelAppDelegate: Activation policy will change to \(isAccessory ? "accessory" : "regular")")
+        
+        // Set flag to prevent termination during policy change
+        isActivationPolicyChangeInProgress = true
+    }
+    
+    func windowService(_ service: WindowService, didChangeActivationPolicy isAccessory: Bool) {
+        print("PanelAppDelegate: Activation policy changed to \(isAccessory ? "accessory" : "regular")")
+        
+        // Small delay to ensure policy change is fully complete
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            self.isActivationPolicyChangeInProgress = false
+            print("PanelAppDelegate: Activation policy change complete, app termination re-enabled")
         }
     }
 }
