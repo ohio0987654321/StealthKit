@@ -8,22 +8,47 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     private var isActivationPolicyChangeInProgress = false
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        print("DEBUG: applicationDidFinishLaunching started")
+        
         // Set up menu bar
+        print("DEBUG: Setting up menu bar...")
         setupMenuBar()
+        print("DEBUG: Menu bar setup complete")
         
         // Set up WindowService delegate
+        print("DEBUG: Setting up WindowService delegate...")
         WindowService.shared.panelDelegate = self
+        print("DEBUG: WindowService delegate set")
         
         // Create the main panel immediately
+        print("DEBUG: About to create main panel...")
         createMainPanel()
+        print("DEBUG: Main panel creation initiated")
         
         // Observe activation policy changes to handle menu conflicts
+        print("DEBUG: Setting up notification observers...")
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleActivationPolicyChange),
             name: NSApplication.didBecomeActiveNotification,
             object: nil
         )
+        print("DEBUG: Notification observers set up")
+        
+        print("DEBUG: applicationDidFinishLaunching completed")
+        
+        // Additional safety check to ensure panel exists
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if let panel = self.mainPanel {
+                print("DEBUG: Panel verification - panel exists and visible: \(panel.isVisible)")
+                if !panel.isVisible {
+                    print("DEBUG: Panel not visible, forcing it to show...")
+                    panel.makeKeyAndOrderFront(nil)
+                }
+            } else {
+                print("ERROR: No main panel exists after startup!")
+            }
+        }
     }
     
     @objc private func handleActivationPolicyChange() {
@@ -82,6 +107,8 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     }
     
     private func createMainPanel() {
+        print("DEBUG: Starting panel creation...")
+        
         // Determine style mask based on WindowService settings
         let windowService = WindowService.shared
         let styleMask: NSPanel.StyleMask = windowService.isTrafficLightPreventionEnabled ? 
@@ -103,7 +130,16 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
             defer: false
         )
         
-        guard let panel = mainPanel else { return }
+        guard let panel = mainPanel else {
+            print("ERROR: Failed to create main panel")
+            return
+        }
+        
+        print("DEBUG: Panel created successfully")
+        
+        // EARLY REGISTRATION: Register immediately to prevent app termination
+        windowService.registerPanel(panel)
+        print("DEBUG: Panel registered with WindowService")
         
         // Configure panel properties
         panel.title = "Swift Browser"
@@ -117,6 +153,10 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
         panel.animationBehavior = .documentWindow
         panel.isOpaque = false
         
+        // Ensure panel doesn't close app when minimized
+        panel.hidesOnDeactivate = false
+        panel.canHide = false  // Prevent hiding that might trigger termination
+        
         // Create hosting controller with the browser view
         let browserView = BrowserView()
         hostingController = NSHostingController(rootView: browserView)
@@ -127,17 +167,38 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
             hostingController.view.autoresizingMask = [.width, .height]
         }
         
-        // Register with WindowService AFTER content is set up
-        windowService.registerPanel(panel)
+        print("DEBUG: Panel content configured")
         
-        // Show the panel
+        // Show the panel and ensure it becomes key
         panel.makeKeyAndOrderFront(nil)
+        
+        // Force the panel to become key window to prevent app termination
+        DispatchQueue.main.async {
+            panel.makeKey()
+            print("DEBUG: Panel made key window")
+        }
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        print("DEBUG: applicationShouldTerminateAfterLastWindowClosed called")
+        print("DEBUG: isPanelRecreationInProgress: \(isPanelRecreationInProgress)")
+        print("DEBUG: isActivationPolicyChangeInProgress: \(isActivationPolicyChangeInProgress)")
+        print("DEBUG: mainPanel exists: \(mainPanel != nil)")
+        print("DEBUG: mainPanel visible: \(mainPanel?.isVisible ?? false)")
+        
+        // Never auto-terminate during panel operations
         if isPanelRecreationInProgress || isActivationPolicyChangeInProgress {
+            print("DEBUG: Preventing termination - operations in progress")
             return false
         }
+        
+        // If main panel still exists and is visible, don't terminate
+        if let panel = mainPanel, panel.isVisible {
+            print("DEBUG: Preventing termination - main panel is visible")
+            return false
+        }
+        
+        print("DEBUG: Allowing termination")
         return true
     }
     
@@ -161,20 +222,39 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     func windowService(_ service: WindowService, didRecreatePanel oldPanel: NSPanel, newPanel: NSPanel) {
         if mainPanel === oldPanel {
             isPanelRecreationInProgress = true
-            mainPanel = newPanel
             
-            if let hostingController = hostingController {
-                newPanel.contentView = hostingController.view
-                hostingController.view.frame = newPanel.contentView?.bounds ?? .zero
-                hostingController.view.autoresizingMask = [.width, .height]
-            }
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                if self.mainPanel === newPanel && newPanel.isVisible {
-                    oldPanel.close()
+            // Preserve existing hosting controller and its state to avoid losing tabs/navigation
+            if let existingHostingController = hostingController {
+                // Remove from old panel first
+                existingHostingController.view.removeFromSuperview()
+                
+                // Transfer to new panel
+                newPanel.contentView = existingHostingController.view
+                existingHostingController.view.frame = newPanel.contentView?.bounds ?? .zero
+                existingHostingController.view.autoresizingMask = [.width, .height]
+                
+                // Update reference
+                mainPanel = newPanel
+                
+                // Force SwiftUI to reconfigure toolbar on new panel
+                existingHostingController.view.needsLayout = true
+                existingHostingController.view.layoutSubtreeIfNeeded()
+            } else {
+                // Fallback: create new hosting controller if none exists
+                mainPanel = newPanel
+                let browserView = BrowserView()
+                hostingController = NSHostingController(rootView: browserView)
+                
+                if let hostingController = hostingController {
+                    newPanel.contentView = hostingController.view
+                    hostingController.view.frame = newPanel.contentView?.bounds ?? .zero
+                    hostingController.view.autoresizingMask = [.width, .height]
                 }
-                self.isPanelRecreationInProgress = false
             }
+            
+            // DON'T close old panel here - WindowService handles cleanup
+            // This prevents double cleanup and crashes
+            isPanelRecreationInProgress = false
         }
     }
     

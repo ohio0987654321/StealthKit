@@ -101,20 +101,16 @@ class WindowService {
     }
     
     private func configurePanel(_ panel: NSPanel) {
-        // Configure panel while preserving non-activating behavior
         panel.titlebarAppearsTransparent = false
-        panel.titleVisibility = .visible  // Keep title visible for toolbar
-        panel.toolbarStyle = .unified     // This is crucial for toolbar
+        panel.titleVisibility = .visible
+        panel.toolbarStyle = .unified
         panel.hidesOnDeactivate = false
         panel.canHide = true
         panel.animationBehavior = .documentWindow
         panel.isOpaque = false
-        
-        // For non-activating panels, we need special toolbar handling
-        panel.becomesKeyOnlyIfNeeded = true  // Preserve non-activating behavior
+        panel.becomesKeyOnlyIfNeeded = true
         panel.worksWhenModal = false
         
-        // Apply current settings BEFORE toolbar fixes to avoid conflicts
         if isTransparencyEnabled {
             setWindowTransparency(panel, level: transparencyLevel)
         }
@@ -127,19 +123,18 @@ class WindowService {
             applyCloaking(to: panel)
         }
         
-        // Apply toolbar fixes LAST to ensure they take precedence
+        // Only apply toolbar fixes for initial panel setup, not during recreation
+        // Recreation process handles toolbar separately to avoid conflicts
         ensureToolbarVisibility(panel)
     }
     
     private func ensureToolbarVisibility(_ panel: NSPanel) {
-        // Centralized toolbar management - only one place handles this
+        // Simplified toolbar management without double toggles
         DispatchQueue.main.async {
             if let toolbar = panel.toolbar {
-                toolbar.isVisible = true
-                // Only toggle if really necessary and panel is visible
-                if panel.isVisible && !toolbar.isVisible {
-                    panel.toggleToolbarShown(nil)
-                    panel.toggleToolbarShown(nil)
+                // Direct approach - just ensure it's visible
+                if !toolbar.isVisible {
+                    toolbar.isVisible = true
                 }
             }
         }
@@ -307,8 +302,6 @@ class WindowService {
     private func reinitilizePanelWithNewStyleMask(_ panel: NSPanel) {
         // Preserve panel state
         let frame = panel.frame
-        let contentView = panel.contentView
-        let toolbar = panel.toolbar
         let isKeyWindow = panel.isKeyWindow
         let isMainWindow = panel.isMainWindow
         let alphaValue = panel.alphaValue
@@ -327,10 +320,8 @@ class WindowService {
             defer: false
         )
         
-        // Transfer toolbar but NOT content view - let PanelAppDelegate handle content
-        if let existingToolbar = toolbar {
-            newPanel.toolbar = existingToolbar
-        }
+        // DON'T transfer toolbar - let SwiftUI reconfigure it properly on the new panel
+        // This prevents UI positioning issues with toolbar items
         
         // DON'T transfer content view here - PanelAppDelegate will handle it
         // This prevents double assignment that confuses NSHostingController
@@ -340,8 +331,25 @@ class WindowService {
         newPanel.alphaValue = alphaValue
         newPanel.level = level
         
-        // Apply current configuration
-        configurePanel(newPanel)
+        // Apply basic panel configuration WITHOUT toolbar manipulation
+        newPanel.titlebarAppearsTransparent = false
+        newPanel.titleVisibility = .visible
+        newPanel.toolbarStyle = .unified
+        newPanel.hidesOnDeactivate = false
+        newPanel.canHide = true
+        newPanel.animationBehavior = .documentWindow
+        newPanel.isOpaque = false
+        newPanel.becomesKeyOnlyIfNeeded = true
+        newPanel.worksWhenModal = false
+        
+        // Apply window effects
+        if isTransparencyEnabled {
+            setWindowTransparency(newPanel, level: transparencyLevel)
+        }
+        
+        if isAlwaysOnTop {
+            setPanelAlwaysOnTop(newPanel)
+        }
         
         // Replace the old panel
         if isKeyWindow || isMainWindow {
@@ -350,27 +358,31 @@ class WindowService {
             newPanel.orderFront(nil)
         }
         
-        // Notify delegate about panel recreation BEFORE cleanup
-        // This allows PanelAppDelegate to update references and preserve hosting controller
+        // Register new panel BEFORE notifying delegate (delegate needs it registered)
+        unregisterWindow(panel)
+        managedWindows.insert(newPanel)
+        
+        // Set up panel delegate
+        if newPanel.delegate == nil {
+            newPanel.delegate = WindowServiceDelegate.shared
+        }
+        
+        // Notify delegate about panel recreation - delegate handles content transfer
         panelDelegate?.windowService(self, didRecreatePanel: panel, newPanel: newPanel)
         
-        // Clean up - unregister old panel and register new one
-        unregisterWindow(panel)
-        registerPanel(newPanel)
-        
-        // DON'T close the old panel immediately - let the delegate handle it
-        panel.orderOut(nil)
-        
-        // Apply screen recording bypass to new panel if needed
-        // Do this AFTER panel recreation is complete to avoid toolbar conflicts
-        if isScreenRecordingBypassEnabled {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.applyCloaking(to: newPanel)
-            }
-        } else {
-            // Ensure toolbar visibility on new panel
+        // SINGLE cleanup point - close old panel AFTER delegate finishes content transfer
+        DispatchQueue.main.async {
+            panel.orderOut(nil)
+            
+            // Apply final configurations AFTER cleanup is complete
             DispatchQueue.main.async {
-                self.ensureToolbarVisibility(newPanel)
+                // Apply screen recording bypass if needed
+                if self.isScreenRecordingBypassEnabled {
+                    self.applyCloaking(to: newPanel)
+                } else {
+                    // Only fix toolbar if no screen recording bypass (which handles it separately)
+                    self.ensureToolbarVisibility(newPanel)
+                }
             }
         }
     }
