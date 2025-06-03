@@ -128,7 +128,7 @@ struct SidebarRowView: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.blue)
                 .frame(width: 16, height: 16)
             
             Text(title)
@@ -141,8 +141,8 @@ struct SidebarRowView: View {
         .padding(.horizontal, horizontalPadding)
         .padding(.vertical, 6)
         .background(
-            Rectangle()
-                .fill(isSelected ? Color.white : (isHovered ? Color(.controlBackgroundColor) : Color.clear))
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isSelected ? Color.white.opacity(0.15) : (isHovered ? Color.white.opacity(0.08) : Color.clear))
         )
 
         .contentShape(Rectangle())
