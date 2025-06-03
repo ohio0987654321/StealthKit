@@ -13,40 +13,9 @@ struct SwiftBrowserApp: App {
         }
         .windowResizability(.contentSize)
         .defaultSize(width: UIConstants.Window.defaultWidth, height: UIConstants.Window.defaultHeight)
-        .commands {
-            BrowserCommands()
-        }
     }
 }
-struct BrowserCommands: Commands {
-    var body: some Commands {
-        CommandGroup(after: .newItem) {
-            Button("New Tab") {
-                NotificationCenter.default.post(name: .newTab, object: nil)
-            }
-            .keyboardShortcut("t", modifiers: .command)
-        }
-        
-        CommandGroup(after: .newItem) {
-            Button("Close Tab") {
-                NotificationCenter.default.post(name: .closeTab, object: nil)
-            }
-            .keyboardShortcut("w", modifiers: .command)
-        }
-        
-        CommandGroup(after: .sidebar) {
-            Button("Reload") {
-                NotificationCenter.default.post(name: .reload, object: nil)
-            }
-            .keyboardShortcut("r", modifiers: .command)
-            
-            Button("Select Address Bar") {
-                NotificationCenter.default.post(name: .focusAddressBar, object: nil)
-            }
-            .keyboardShortcut("l", modifiers: .command)
-        }
-    }
-}
+
 
 // Notification names for keyboard shortcuts
 extension Notification.Name {

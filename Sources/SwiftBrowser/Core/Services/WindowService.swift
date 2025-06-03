@@ -177,12 +177,6 @@ class WindowService {
         
         let menu = NSMenu()
         
-        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: "")
-        settingsItem.target = self
-        menu.addItem(settingsItem)
-        
-        menu.addItem(NSMenuItem.separator())
-        
         let quitItem = NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "")
         menu.addItem(quitItem)
         
@@ -196,10 +190,7 @@ class WindowService {
         }
     }
     
-    @objc private func openSettings() {
-        NotificationCenter.default.post(name: .openSettings, object: nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
+
     
     // MARK: - WebView Configuration
     func configureWebViewForStealth(_ webView: WKWebView) {
