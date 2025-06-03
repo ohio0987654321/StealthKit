@@ -11,12 +11,15 @@ struct WebView: NSViewRepresentable {
         if let existingWebView = tab.webView {
             existingWebView.navigationDelegate = context.coordinator
             existingWebView.uiDelegate = context.coordinator
+            context.coordinator.updateWebViewConfiguration(existingWebView)
             onWebViewCreated?(existingWebView)
             return existingWebView
         }
         
-        // Create new WebView only if tab doesn't have one
-        let webView = WKWebView()
+        // Create new WebView with security configuration
+        let configuration = WKWebViewConfiguration()
+        context.coordinator.applySecuritySettings(to: configuration)
+        let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         
@@ -86,6 +89,15 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         tab.isLoading = false
         tab.updateFromWebView(webView)
+        
+        // Add to history when navigation completes
+        if let url = webView.url,
+           !url.absoluteString.hasPrefix("about:") &&
+           !url.absoluteString.hasPrefix("data:") {
+            let title = webView.title ?? url.host ?? "Untitled"
+            HistoryManager.shared.addHistoryItem(title: title, url: url)
+        }
+        
         onNavigationChange(tab)
     }
     
@@ -97,6 +109,23 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
     
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, 
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        
+        // Handle HTTPS enforcement
+        if let url = navigationAction.request.url,
+           SecuritySettings.shared.isHTTPSEnforcementEnabled,
+           url.scheme == "http" {
+            
+            // Try to redirect to HTTPS
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            components?.scheme = "https"
+            
+            if let httpsURL = components?.url {
+                decisionHandler(.cancel)
+                webView.load(URLRequest(url: httpsURL))
+                return
+            }
+        }
+        
         decisionHandler(.allow)
     }
     
@@ -134,5 +163,20 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         alert.addButton(withTitle: "Cancel")
         let response = alert.runModal()
         completionHandler(response == .alertFirstButtonReturn)
+    }
+    
+    func applySecuritySettings(to configuration: WKWebViewConfiguration) {
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = SecuritySettings.shared.isJavaScriptEnabled
+        configuration.websiteDataStore = WKWebsiteDataStore.default()
+    }
+    
+    func updateWebViewConfiguration(_ webView: WKWebView) {
+        let script = SecuritySettings.shared.isJavaScriptEnabled ? "" : 
+            "document.documentElement.style.pointerEvents = 'none';"
+        
+        if !script.isEmpty {
+            let userScript = WKUserScript(source: script, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
+            webView.configuration.userContentController.addUserScript(userScript)
+        }
     }
 }

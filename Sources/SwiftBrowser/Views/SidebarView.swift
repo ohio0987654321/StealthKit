@@ -5,6 +5,8 @@ import SwiftUI
 enum SidebarItem: Hashable {
     case settingsBrowserUtilities
     case settingsWindowUtilities
+    case settingsSecurityPrivacy
+    case settingsHistory
     case tab(UUID)
 }
 
@@ -99,6 +101,22 @@ struct SidebarSettingsItems: View {
                 title: "Window Utilities",
                 isSelected: selectedItem == .settingsWindowUtilities,
                 onSelect: { onSelectionChange(.settingsWindowUtilities) },
+                indentLevel: 0
+            )
+            
+            SidebarRowView(
+                icon: "shield",
+                title: "Security & Privacy",
+                isSelected: selectedItem == .settingsSecurityPrivacy,
+                onSelect: { onSelectionChange(.settingsSecurityPrivacy) },
+                indentLevel: 0
+            )
+            
+            SidebarRowView(
+                icon: "clock",
+                title: "History",
+                isSelected: selectedItem == .settingsHistory,
+                onSelect: { onSelectionChange(.settingsHistory) },
                 indentLevel: 0
             )
         }

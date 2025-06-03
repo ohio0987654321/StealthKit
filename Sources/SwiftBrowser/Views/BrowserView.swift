@@ -59,6 +59,10 @@ struct BrowserView: View {
                                 SettingsBrowserUtilitiesView()
                             case .windowUtilities:
                                 SettingsWindowUtilitiesView()
+                            case .securityPrivacy:
+                                SettingsSecurityPrivacyView()
+                            case .history:
+                                HistoryView()
                             case .welcome:
                                 WelcomeView()
                             }
@@ -183,6 +187,10 @@ struct BrowserView: View {
                     selectedSidebarItem = .settingsBrowserUtilities
                 case .windowUtilities:
                     selectedSidebarItem = .settingsWindowUtilities
+                case .securityPrivacy:
+                    selectedSidebarItem = .settingsSecurityPrivacy
+                case .history:
+                    selectedSidebarItem = .settingsHistory
                 case .welcome:
                     selectedSidebarItem = .tab(tabId)
                 }
@@ -205,6 +213,16 @@ struct BrowserView: View {
             addressText = ""
         case .settingsWindowUtilities:
             let tab = viewModel.createSettingsTab(type: .windowUtilities)
+            currentTab = tab
+            currentWebView = nil
+            addressText = ""
+        case .settingsSecurityPrivacy:
+            let tab = viewModel.createSettingsTab(type: .securityPrivacy)
+            currentTab = tab
+            currentWebView = nil
+            addressText = ""
+        case .settingsHistory:
+            let tab = viewModel.createSettingsTab(type: .history)
             currentTab = tab
             currentWebView = nil
             addressText = ""

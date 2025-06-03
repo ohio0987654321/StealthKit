@@ -11,6 +11,8 @@ enum TabType {
 enum SettingsType {
     case browserUtilities
     case windowUtilities
+    case securityPrivacy
+    case history
     case welcome
 }
 
@@ -48,6 +50,12 @@ class Tab: Identifiable {
         case .windowUtilities:
             self.title = "Window Utilities"
             self.favicon = Image(systemName: "macwindow")
+        case .securityPrivacy:
+            self.title = "Security & Privacy"
+            self.favicon = Image(systemName: "shield")
+        case .history:
+            self.title = "History"
+            self.favicon = Image(systemName: "clock")
         case .welcome:
             self.title = "Welcome"
             self.favicon = Image(systemName: "safari")
