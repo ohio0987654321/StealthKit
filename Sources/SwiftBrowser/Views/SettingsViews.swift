@@ -1,12 +1,12 @@
 import SwiftUI
 
-struct SettingsSearchEngineView: View {
+struct SettingsBrowserUtilitiesView: View {
     @State private var settings = AppSettings.shared
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Search Engine")
+                Text("Browser Utilities")
                     .font(UITheme.Typography.title)
                 
                 Text("Choose your default search engine and configure search preferences.")
@@ -38,47 +38,63 @@ struct SettingsWindowUtilitiesView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text("Window Utilities")
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                    .font(UITheme.Typography.title)
                 
                 Text("Configure window management features and privacy utilities.")
-                    .foregroundColor(.secondary)
+                    .font(UITheme.Typography.body)
+                    .foregroundColor(UITheme.Colors.secondary)
                 
-                VStack(alignment: .leading, spacing: 16) {
-                    GroupBox("Screen Recording Bypass") {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Screen Recording Bypass section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Screen Recording Bypass")
+                            .font(.headline)
+                        
                         VStack(alignment: .leading, spacing: 8) {
                             Toggle("NSPanel Window Cloaking", isOn: $windowService.isCloakingEnabled)
+                            
                             Text("Makes browser windows invisible to screen recording and screenshot tools")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                                .padding(.leading, 20)
                             
                             Toggle("Pin to Current Desktop", isOn: $windowService.isPinnedToCurrentDesktop)
-                            .disabled(!windowService.isCloakingEnabled)
+                                .disabled(!windowService.isCloakingEnabled)
+                            
                             Text("When enabled, window stays on current virtual desktop only")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                                .padding(.leading, 20)
                         }
-                        .padding(.vertical, 4)
                     }
                     
-                    GroupBox("Window Behavior") {
+                    // Window Behavior section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Window Behavior")
+                            .font(.headline)
+                        
                         VStack(alignment: .leading, spacing: 8) {
                             Toggle("Always on Top", isOn: $windowService.isAlwaysOnTop)
+                            
                             Text("Keep browser window above all other windows. Note: Always on Top windows are hidden during Mission Control.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                                .padding(.leading, 20)
                         }
-                        .padding(.vertical, 4)
                     }
                     
-                    GroupBox("Window Transparency") {
-                        VStack(alignment: .leading, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Toggle("Enable Window Transparency", isOn: $windowService.isTransparencyEnabled)
-                                Text("Make the browser window semi-transparent")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
+                    // Window Transparency section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Window Transparency")
+                            .font(.headline)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Toggle("Enable Window Transparency", isOn: $windowService.isTransparencyEnabled)
+                            
+                            Text("Make the browser window semi-transparent")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .padding(.leading, 20)
                             
                             if windowService.isTransparencyEnabled {
                                 VStack(alignment: .leading, spacing: 8) {
@@ -90,6 +106,7 @@ struct SettingsWindowUtilitiesView: View {
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                     }
+                                    .padding(.leading, 20)
                                     
                                     Slider(
                                         value: Binding(
@@ -108,20 +125,25 @@ struct SettingsWindowUtilitiesView: View {
                                             .font(.caption2)
                                             .foregroundColor(.secondary)
                                     }
+                                    .padding(.leading, 20)
                                 }
                             }
                         }
-                        .padding(.vertical, 4)
                     }
                     
-                    GroupBox("Application Behavior") {
+                    // Application Behavior section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Application Behavior")
+                            .font(.headline)
+                        
                         VStack(alignment: .leading, spacing: 8) {
                             Toggle("Accessory App Mode", isOn: $windowService.isAccessoryApp)
+                            
                             Text("When enabled: App won't appear in Dock or menu bar when focused. When disabled: Normal dock icon behavior.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                                .padding(.leading, 20)
                         }
-                        .padding(.vertical, 4)
                     }
                 }
             }

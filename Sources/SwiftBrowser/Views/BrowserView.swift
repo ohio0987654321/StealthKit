@@ -35,8 +35,8 @@ struct BrowserView: View {
                 // Main content area
                 ZStack {
                 switch currentContent {
-                case .settingsSearchEngine:
-                    SettingsSearchEngineView()
+                case .settingsBrowserUtilities:
+                    SettingsBrowserUtilitiesView()
                 case .settingsWindowUtilities:
                     SettingsWindowUtilitiesView()
 
@@ -179,8 +179,8 @@ struct BrowserView: View {
         selectedSidebarItem = item
         
         switch item {
-        case .settingsSearchEngine:
-            currentContent = .settingsSearchEngine
+        case .settingsBrowserUtilities:
+            currentContent = .settingsBrowserUtilities
             currentWebView = nil
         case .settingsWindowUtilities:
             currentContent = .settingsWindowUtilities

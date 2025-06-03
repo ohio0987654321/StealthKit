@@ -1,14 +1,14 @@
 import SwiftUI
 
 enum ContentType {
-    case settingsSearchEngine
+    case settingsBrowserUtilities
     case settingsWindowUtilities
     case webTab(Tab)
     case welcome
 }
 
 enum SidebarItem: Hashable {
-    case settingsSearchEngine
+    case settingsBrowserUtilities
     case settingsWindowUtilities
     case tab(UUID)
 }
@@ -19,23 +19,24 @@ struct HierarchicalSidebarView: View {
     let onSelectionChange: (SidebarItem) -> Void
     let onCloseTab: (Tab) -> Void
     
-    @State private var settingsExpanded = true
-    
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                SidebarSectionHeader(
-                    title: "SETTINGS",
-                    icon: "gear",
-                    isExpanded: $settingsExpanded
-                )
-                
-                if settingsExpanded {
-                    SidebarSettingsItems(
-                        selectedItem: $selectedItem,
-                        onSelectionChange: onSelectionChange
-                    )
+                // Settings header
+                HStack {
+                    Text("Settings")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(Color(.tertiaryLabelColor))
+                    Spacer()
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+                
+                SidebarSettingsItems(
+                    selectedItem: $selectedItem,
+                    onSelectionChange: onSelectionChange
+                )
             }
         }
         .navigationTitle("")
@@ -61,15 +62,9 @@ struct SidebarSectionHeader: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    Image(systemName: icon)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
                     Text(title)
-                        .font(.caption)
-                        .fontWeight(.semibold)
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.secondary)
-                        .textCase(.uppercase)
                 }
             }
             .buttonStyle(PlainButtonStyle())
@@ -98,10 +93,10 @@ struct SidebarSettingsItems: View {
         VStack(spacing: 0) {
             SidebarRowView(
                 icon: "magnifyingglass",
-                title: "Search Engine",
-                isSelected: selectedItem == .settingsSearchEngine,
-                onSelect: { onSelectionChange(.settingsSearchEngine) },
-                indentLevel: 1
+                title: "Browser Utilities",
+                isSelected: selectedItem == .settingsBrowserUtilities,
+                onSelect: { onSelectionChange(.settingsBrowserUtilities) },
+                indentLevel: 0
             )
             
             SidebarRowView(
@@ -109,10 +104,10 @@ struct SidebarSettingsItems: View {
                 title: "Window Utilities",
                 isSelected: selectedItem == .settingsWindowUtilities,
                 onSelect: { onSelectionChange(.settingsWindowUtilities) },
-                indentLevel: 1
+                indentLevel: 0
             )
         }
-        .clipShape(RoundedRectangle(cornerRadius: UITheme.CornerRadius.card))
+
         .padding(.horizontal, 8)
         .padding(.bottom, 8)
     }
@@ -147,14 +142,9 @@ struct SidebarRowView: View {
         .padding(.vertical, 6)
         .background(
             Rectangle()
-                .fill(isSelected ? Color.accentColor.opacity(0.15) : (isHovered ? Color(.controlAccentColor).opacity(0.05) : Color.clear))
+                .fill(isSelected ? Color.white : (isHovered ? Color(.controlBackgroundColor) : Color.clear))
         )
-        .overlay(
-            Rectangle()
-                .fill(isSelected ? Color.accentColor : Color.clear)
-                .frame(width: 3),
-            alignment: .leading
-        )
+
         .contentShape(Rectangle())
         .onTapGesture {
             onSelect()
