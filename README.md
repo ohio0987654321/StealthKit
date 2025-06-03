@@ -1,6 +1,7 @@
 # SwiftBrowser
 
 A clean, fast macOS browser built with SwiftUI and WebKit.
+This browser focuses on a minimal but effective security & privacy layer, with almost no user configuration needed. Advanced features are unified under a single control panel for clarity, not complexity
 
 ## Features
 
