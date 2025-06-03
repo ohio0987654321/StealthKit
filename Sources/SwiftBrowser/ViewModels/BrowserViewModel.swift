@@ -22,6 +22,26 @@ class BrowserViewModel {
         return newTab
     }
     
+    @discardableResult
+    func createSettingsTab(type: SettingsType) -> Tab {
+        // Check if this settings tab already exists
+        if let existingIndex = tabs.firstIndex(where: {
+            if case .settings(let settingsType) = $0.tabType {
+                return settingsType == type
+            }
+            return false
+        }) {
+            // Switch to existing tab instead of creating duplicate
+            currentTabIndex = existingIndex
+            return tabs[existingIndex]
+        }
+        
+        let newTab = Tab(settingsType: type)
+        tabs.append(newTab)
+        currentTabIndex = tabs.count - 1
+        return newTab
+    }
+    
 
     
     func closeTab(at index: Int) {

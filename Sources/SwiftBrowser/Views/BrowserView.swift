@@ -39,20 +39,29 @@ struct BrowserView: View {
                     SettingsBrowserUtilitiesView()
                 case .settingsWindowUtilities:
                     SettingsWindowUtilitiesView()
-
                 case .webTab(let tab):
-                    WebView(
-                        tab: .constant(tab),
-                        onNavigationChange: { updatedTab in
-                            if let index = viewModel.tabs.firstIndex(where: { $0.id == updatedTab.id }) {
-                                viewModel.tabs[index] = updatedTab
+                    switch tab.tabType {
+                    case .web:
+                        WebView(
+                            tab: .constant(tab),
+                            onNavigationChange: { updatedTab in
+                                if let index = viewModel.tabs.firstIndex(where: { $0.id == updatedTab.id }) {
+                                    viewModel.tabs[index] = updatedTab
+                                }
+                            },
+                            onWebViewCreated: { webView in
+                                currentWebView = webView
                             }
-                        },
-                        onWebViewCreated: { webView in
-                            currentWebView = webView
+                        )
+                        .id(tab.id)
+                    case .settings(let settingsType):
+                        switch settingsType {
+                        case .browserUtilities:
+                            SettingsBrowserUtilitiesView()
+                        case .windowUtilities:
+                            SettingsWindowUtilitiesView()
                         }
-                    )
-                    .id(tab.id)
+                    }
                 case .welcome:
                     WelcomeView(onCreateNewTab: {
                         let newTab = viewModel.createNewTab()
@@ -159,7 +168,8 @@ struct BrowserView: View {
     }
     
     private func isWebContentActive() -> Bool {
-        if case .webTab = currentContent {
+        if case .webTab(let tab) = currentContent,
+           case .web = tab.tabType {
             return true
         }
         return false
@@ -167,7 +177,19 @@ struct BrowserView: View {
     
     private func handleTabSelection(_ tabId: UUID) {
         if let tab = viewModel.tabs.first(where: { $0.id == tabId }) {
-            selectedSidebarItem = .tab(tabId)
+            // Set sidebar selection based on tab type
+            switch tab.tabType {
+            case .web:
+                selectedSidebarItem = .tab(tabId)
+            case .settings(let settingsType):
+                switch settingsType {
+                case .browserUtilities:
+                    selectedSidebarItem = .settingsBrowserUtilities
+                case .windowUtilities:
+                    selectedSidebarItem = .settingsWindowUtilities
+                }
+            }
+            
             currentContent = .webTab(tab)
             viewModel.selectTab(at: viewModel.tabs.firstIndex(where: { $0.id == tabId }) ?? 0)
             addressText = tab.url?.absoluteString ?? ""
@@ -179,11 +201,15 @@ struct BrowserView: View {
         
         switch item {
         case .settingsBrowserUtilities:
-            currentContent = .settingsBrowserUtilities
+            let tab = viewModel.createSettingsTab(type: .browserUtilities)
+            currentContent = .webTab(tab)
             currentWebView = nil
+            addressText = ""
         case .settingsWindowUtilities:
-            currentContent = .settingsWindowUtilities
+            let tab = viewModel.createSettingsTab(type: .windowUtilities)
+            currentContent = .webTab(tab)
             currentWebView = nil
+            addressText = ""
         case .tab(let tabId):
             if let tab = viewModel.tabs.first(where: { $0.id == tabId }) {
                 currentContent = .webTab(tab)

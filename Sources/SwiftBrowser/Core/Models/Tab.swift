@@ -2,6 +2,16 @@ import Foundation
 import WebKit
 import SwiftUI
 
+enum TabType {
+    case web(URL?)
+    case settings(SettingsType)
+}
+
+enum SettingsType {
+    case browserUtilities
+    case windowUtilities
+}
+
 @Observable
 class Tab: Identifiable {
     let id = UUID()
@@ -13,11 +23,25 @@ class Tab: Identifiable {
     var estimatedProgress: Double = 0.0
     var webView: WKWebView?
     var favicon: Image?
+    let tabType: TabType
     
     init(url: URL? = nil) {
+        self.tabType = .web(url)
         self.url = url
         if let url = url {
             self.title = url.host ?? url.absoluteString
+        }
+    }
+    
+    init(settingsType: SettingsType) {
+        self.tabType = .settings(settingsType)
+        switch settingsType {
+        case .browserUtilities:
+            self.title = "Browser Utilities"
+            self.favicon = Image(systemName: "magnifyingglass")
+        case .windowUtilities:
+            self.title = "Window Utilities"
+            self.favicon = Image(systemName: "macwindow")
         }
     }
     
