@@ -152,9 +152,14 @@ struct BrowserView: View {
                 viewModel.tabs.append(welcomeTab)
                 currentTab = welcomeTab
                 selectedSidebarItem = .tab(welcomeTab.id)
-            } else if let firstTab = viewModel.tabs.first {
-                currentTab = firstTab
-                selectedSidebarItem = .tab(firstTab.id)
+            } else if currentTab == nil {
+                // Only initialize if no current selection exists
+                // Use viewModel.currentTabIndex to determine which tab should be active
+                let targetIndex = min(viewModel.currentTabIndex, viewModel.tabs.count - 1)
+                let targetTab = viewModel.tabs[targetIndex]
+                currentTab = targetTab
+                selectedSidebarItem = .tab(targetTab.id)
+                addressText = targetTab.url?.absoluteString ?? ""
             }
         }
         .onDisappear {
