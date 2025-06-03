@@ -1,17 +1,13 @@
-// Fixed version - preserves toolbar functionality
 import SwiftUI
 import AppKit
 import WebKit
 
-/// Delegate protocol for notifying about panel recreations and activation policy changes
 protocol WindowServicePanelDelegate: AnyObject {
     func windowService(_ service: WindowService, didRecreatePanel oldPanel: NSPanel, newPanel: NSPanel)
     func windowService(_ service: WindowService, willChangeActivationPolicy isAccessory: Bool)
     func windowService(_ service: WindowService, didChangeActivationPolicy isAccessory: Bool)
 }
 
-/// Unified window management service that handles all window-related functionality
-/// Replaces the fragmented StealthManager + WindowManager + WindowCloaking architecture
 @Observable
 class WindowService {
     static let shared = WindowService()
@@ -34,16 +30,12 @@ class WindowService {
         didSet { applyAlwaysOnTopToAllWindows() }
     }
     
-    // MARK: - Separated Feature Controls
-    
-    // Screen Recording Bypass - applies dynamically (no reinitilization needed)
     var isScreenRecordingBypassEnabled: Bool = false {
         didSet { 
             applyScreenRecordingBypassToAllWindows()
         }
     }
     
-    // Feature A: Traffic Light Prevention - requires reinitilization
     var isTrafficLightPreventionEnabled: Bool = false {
         didSet { 
             updateTrafficLightPrevention()
@@ -87,7 +79,6 @@ class WindowService {
     
     // MARK: - Window Configuration
     private func configureWindow(_ window: NSWindow) {
-        // Apply unified window styling
         window.titlebarAppearsTransparent = false
         window.titleVisibility = .hidden
         window.toolbarStyle = .unified
@@ -96,7 +87,6 @@ class WindowService {
         window.animationBehavior = .documentWindow
         window.isOpaque = false
         
-        // Apply current settings
         if isTransparencyEnabled {
             setWindowTransparency(window, level: transparencyLevel)
         }
@@ -124,18 +114,7 @@ class WindowService {
         panel.becomesKeyOnlyIfNeeded = true  // Preserve non-activating behavior
         panel.worksWhenModal = false
         
-        // CRITICAL: Force toolbar to be visible on non-activating panels
-        // This is a workaround for NSPanel toolbar visibility issues
-        DispatchQueue.main.async {
-            if let toolbar = panel.toolbar {
-                toolbar.isVisible = true
-                // Force toolbar to display properly
-                panel.toggleToolbarShown(nil)
-                panel.toggleToolbarShown(nil)
-            }
-        }
-        
-        // Apply current settings
+        // Apply current settings BEFORE toolbar fixes to avoid conflicts
         if isTransparencyEnabled {
             setWindowTransparency(panel, level: transparencyLevel)
         }
@@ -146,6 +125,23 @@ class WindowService {
         
         if isScreenRecordingBypassEnabled {
             applyCloaking(to: panel)
+        }
+        
+        // Apply toolbar fixes LAST to ensure they take precedence
+        ensureToolbarVisibility(panel)
+    }
+    
+    private func ensureToolbarVisibility(_ panel: NSPanel) {
+        // Centralized toolbar management - only one place handles this
+        DispatchQueue.main.async {
+            if let toolbar = panel.toolbar {
+                toolbar.isVisible = true
+                // Only toggle if really necessary and panel is visible
+                if panel.isVisible && !toolbar.isVisible {
+                    panel.toggleToolbarShown(nil)
+                    panel.toggleToolbarShown(nil)
+                }
+            }
         }
     }
     
@@ -223,10 +219,11 @@ class WindowService {
         window.displaysWhenScreenProfileChanges = false
         window.hasShadow = false
         
-        // Special handling for panels to ensure toolbar remains visible
-        if let panel = window as? NSPanel, let toolbar = panel.toolbar {
-            DispatchQueue.main.async {
-                toolbar.isVisible = true
+        // For panels, use centralized toolbar management to avoid conflicts
+        if let panel = window as? NSPanel {
+            // Small delay to let collection behavior settle before toolbar fixes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                self.ensureToolbarVisibility(panel)
             }
         }
     }
@@ -263,27 +260,16 @@ class WindowService {
     // MARK: - Accessory App Management
     private func applyAccessoryAppPolicy() {
         DispatchQueue.main.async {
-            // Notify delegate that policy change is starting
             self.panelDelegate?.windowService(self, willChangeActivationPolicy: self.isAccessoryApp)
             
             if self.isAccessoryApp {
-                print("WindowService: Switching to accessory mode")
-                // First set up the status item, then change policy
                 self.setupMenuBarIcon()
                 NSApp.setActivationPolicy(.accessory)
-                
-                // Notify delegate that policy change is complete
                 self.panelDelegate?.windowService(self, didChangeActivationPolicy: self.isAccessoryApp)
             } else {
-                print("WindowService: Switching to regular mode")
-                // Clean up status item first, then restore normal policy
                 self.removeMenuBarIcon()
-                // Add a small delay to ensure clean transition
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     NSApp.setActivationPolicy(.regular)
-                    print("WindowService: Regular mode activated")
-                    
-                    // Notify delegate that policy change is complete
                     self.panelDelegate?.windowService(self, didChangeActivationPolicy: self.isAccessoryApp)
                 }
             }
@@ -297,27 +283,20 @@ class WindowService {
         statusItem?.button?.image = NSImage(systemSymbolName: "globe", accessibilityDescription: "Browser")
         
         let menu = NSMenu()
-        
         let quitItem = NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "")
         menu.addItem(quitItem)
         
         statusItem?.menu = menu
-        print("WindowService: Status item created")
     }
     
     private func removeMenuBarIcon() {
         if let statusItem = statusItem {
             NSStatusBar.system.removeStatusItem(statusItem)
             self.statusItem = nil
-            print("WindowService: Status item removed")
         }
     }
     
-    // MARK: - Traffic Light Prevention (Feature A)
     private func updateTrafficLightPrevention() {
-        print("Traffic light prevention update triggered. Enabled: \(isTrafficLightPreventionEnabled)")
-        
-        // Update all managed panels with new style mask
         let panelsToUpdate = Array(managedWindows.compactMap { $0 as? NSPanel })
         
         for panel in panelsToUpdate {
@@ -382,10 +361,16 @@ class WindowService {
         // DON'T close the old panel immediately - let the delegate handle it
         panel.orderOut(nil)
         
-        // Ensure toolbar visibility on new panel
-        DispatchQueue.main.async {
-            if let toolbar = newPanel.toolbar {
-                toolbar.isVisible = true
+        // Apply screen recording bypass to new panel if needed
+        // Do this AFTER panel recreation is complete to avoid toolbar conflicts
+        if isScreenRecordingBypassEnabled {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.applyCloaking(to: newPanel)
+            }
+        } else {
+            // Ensure toolbar visibility on new panel
+            DispatchQueue.main.async {
+                self.ensureToolbarVisibility(newPanel)
             }
         }
     }

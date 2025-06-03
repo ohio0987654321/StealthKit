@@ -1,8 +1,6 @@
 import SwiftUI
 import AppKit
 
-/// Main app delegate for pure AppKit architecture
-/// Creates NSPanel directly at launch without SwiftUI window conflicts
 class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDelegate {
     private var mainPanel: NSPanel?
     private var hostingController: NSHostingController<BrowserView>?
@@ -29,11 +27,9 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     }
     
     @objc private func handleActivationPolicyChange() {
-        // Ensure our main menu is always properly set when returning to regular mode
         DispatchQueue.main.async {
             if NSApp.activationPolicy() == .regular && NSApp.mainMenu == nil {
                 self.setupMenuBar()
-                print("PanelAppDelegate: Restored main menu after activation policy change")
             }
         }
     }
@@ -139,18 +135,9 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        // Don't terminate during panel recreation
-        if isPanelRecreationInProgress {
-            print("PanelAppDelegate: Preventing termination during panel recreation")
+        if isPanelRecreationInProgress || isActivationPolicyChangeInProgress {
             return false
         }
-        
-        // Don't terminate during activation policy changes
-        if isActivationPolicyChangeInProgress {
-            print("PanelAppDelegate: Preventing termination during activation policy change")
-            return false
-        }
-        
         return true
     }
     
@@ -172,57 +159,32 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     
     // MARK: - WindowServicePanelDelegate
     func windowService(_ service: WindowService, didRecreatePanel oldPanel: NSPanel, newPanel: NSPanel) {
-        // Update our reference to the main panel when it's recreated
         if mainPanel === oldPanel {
-            print("PanelAppDelegate: Panel recreation detected, updating references...")
-            
-            // Set flag to prevent app termination during recreation
             isPanelRecreationInProgress = true
-            
-            // Update panel reference FIRST
             mainPanel = newPanel
             
-            // Set up content view properly - this is the ONLY place content is assigned
             if let hostingController = hostingController {
-                // Clean assignment - no double setting
                 newPanel.contentView = hostingController.view
                 hostingController.view.frame = newPanel.contentView?.bounds ?? .zero
                 hostingController.view.autoresizingMask = [.width, .height]
-                
-                print("PanelAppDelegate: Hosting controller reconnected successfully")
             }
             
-            // Ensure new panel is fully established before closing old one
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                // Double-check that we still have a valid main panel
                 if self.mainPanel === newPanel && newPanel.isVisible {
                     oldPanel.close()
-                    print("PanelAppDelegate: Old panel closed safely after delay")
-                } else {
-                    print("PanelAppDelegate: Skipping old panel closure - new panel not established")
                 }
-                
-                // Re-enable app termination after recreation is complete
                 self.isPanelRecreationInProgress = false
-                print("PanelAppDelegate: Panel recreation complete, app termination re-enabled")
             }
         }
     }
     
     func windowService(_ service: WindowService, willChangeActivationPolicy isAccessory: Bool) {
-        print("PanelAppDelegate: Activation policy will change to \(isAccessory ? "accessory" : "regular")")
-        
-        // Set flag to prevent termination during policy change
         isActivationPolicyChangeInProgress = true
     }
     
     func windowService(_ service: WindowService, didChangeActivationPolicy isAccessory: Bool) {
-        print("PanelAppDelegate: Activation policy changed to \(isAccessory ? "accessory" : "regular")")
-        
-        // Small delay to ensure policy change is fully complete
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             self.isActivationPolicyChangeInProgress = false
-            print("PanelAppDelegate: Activation policy change complete, app termination re-enabled")
         }
     }
 }
