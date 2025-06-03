@@ -1,90 +1,95 @@
 import SwiftUI
 
 struct WelcomeView: View {
-    let onCreateNewTab: () -> Void
-    
     var body: some View {
-        VStack(spacing: 40) {
+        VStack(spacing: 0) {
             Spacer()
             
-            VStack(spacing: 20) {
-                Image(systemName: "safari")
-                    .font(.system(size: 80, weight: .ultraLight))
-                    .foregroundStyle(.tint)
-                
-                VStack(spacing: 8) {
-                    Text("SwiftBrowser")
-                        .font(.system(.largeTitle, design: .rounded, weight: .light))
-                        .foregroundStyle(.primary)
-                    
-                    Text("Fast, Private, Secure")
-                        .font(.system(.title3, design: .rounded, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-            }
+            // Hero section
+            heroSection
+                .padding(.bottom, 40)
             
-            VStack(spacing: 20) {
-                Button(action: onCreateNewTab) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 16, weight: .medium))
-                        Text("Create New Tab")
-                            .font(.system(.body, design: .rounded, weight: .medium))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 14)
-                    .background(.tint, in: RoundedRectangle(cornerRadius: 12))
-                    .shadow(color: .accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
-                }
-                .buttonStyle(.plain)
-                
-                VStack(spacing: 8) {
-                    Text("Or press ⌘T to create a new tab")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(.secondary)
-                    
-                    HStack(spacing: 16) {
-                        Text("⌘W")
-                            .font(.system(.caption2, design: .monospaced, weight: .medium))
-                            .foregroundStyle(.tertiary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 4))
-                        
-                        Text("Close")
-                            .font(.system(.caption2, design: .rounded))
-                            .foregroundStyle(.tertiary)
-                        
-                        Text("⌘R")
-                            .font(.system(.caption2, design: .monospaced, weight: .medium))
-                            .foregroundStyle(.tertiary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 4))
-                        
-                        Text("Reload")
-                            .font(.system(.caption2, design: .rounded))
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-            }
+            // Keyboard shortcuts section
+            shortcutsSection
             
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.ultraThinMaterial, in: Rectangle())
-        .overlay {
-            // Subtle gradient overlay for depth
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    .clear,
-                    .accentColor.opacity(0.02),
-                    .clear
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+        .padding(.horizontal, 40)
+    }
+    
+    // MARK: - Hero Section
+    private var heroSection: some View {
+        VStack(spacing: 24) {
+            // App icon
+            Image(systemName: "safari")
+                .font(.system(size: 72, weight: .ultraLight, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [UITheme.Colors.accent, UITheme.Colors.accent.opacity(0.8)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            
+            // Title and subtitle
+            VStack(spacing: 8) {
+                Text("SwiftBrowser")
+                    .font(.system(.largeTitle, design: .rounded, weight: .thin))
+                    .foregroundStyle(.primary)
+                
+                Text("Fast, Private, Secure")
+                    .font(.system(.title3, design: .rounded, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
         }
+    }
+    
+    // MARK: - Shortcuts Section
+    private var shortcutsSection: some View {
+        VStack(spacing: 16) {
+            Text("Keyboard Shortcuts")
+                .font(.system(.headline, design: .rounded, weight: .medium))
+                .foregroundStyle(.primary)
+            
+            VStack(spacing: 8) {
+                shortcutRow("⌘T", "New Tab", "plus")
+                shortcutRow("⌘W", "Close Tab", "xmark")
+                shortcutRow("⌘R", "Reload", "arrow.clockwise")
+                shortcutRow("⌘L", "Address Bar", "magnifyingglass")
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: UITheme.CornerRadius.large)
+                .fill(Color.clear)
+                .overlay {
+                    RoundedRectangle(cornerRadius: UITheme.CornerRadius.large)
+                        .stroke(UITheme.Colors.border.opacity(0.1), lineWidth: 0.5)
+                }
+        )
+    }
+    
+    // MARK: - Shortcut Row
+    private func shortcutRow(_ shortcut: String, _ description: String, _ icon: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(UITheme.Colors.accent)
+                .frame(width: 16, height: 16)
+            
+            Text(shortcut)
+                .font(.system(.caption, design: .monospaced, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 24, alignment: .leading)
+            
+            Text(description)
+                .font(.system(.caption, design: .rounded))
+                .foregroundStyle(.secondary)
+            
+            Spacer()
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
     }
 }

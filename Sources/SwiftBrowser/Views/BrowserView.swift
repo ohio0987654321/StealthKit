@@ -63,13 +63,7 @@ struct BrowserView: View {
                         }
                     }
                 case .welcome:
-                    WelcomeView(onCreateNewTab: {
-                        let newTab = viewModel.createNewTab()
-                        selectedSidebarItem = .tab(newTab.id)
-                        currentContent = .webTab(newTab)
-                        currentWebView = nil
-                        addressText = ""
-                    })
+                    WelcomeView()
                 }
             }
             .navigationTitle("")
@@ -293,13 +287,7 @@ struct BrowserView: View {
             }
         }
         
-        NotificationCenter.default.addObserver(
-            forName: .focusAddressBar,
-            object: nil,
-            queue: .main
-        ) { _ in
-            isAddressBarFocused = true
-        }
+        // ⌘L shortcut functionality removed for simplification
     }
     
     private func removeKeyboardShortcuts() {
