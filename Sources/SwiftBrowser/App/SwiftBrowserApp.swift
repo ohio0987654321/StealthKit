@@ -12,7 +12,7 @@ struct SwiftBrowserApp: App {
                 }
         }
         .windowResizability(.contentSize)
-        .defaultSize(width: 1200, height: 800)
+        .defaultSize(width: UIConstants.Window.defaultWidth, height: UIConstants.Window.defaultHeight)
         .commands {
             BrowserCommands()
         }

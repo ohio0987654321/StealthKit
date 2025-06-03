@@ -19,7 +19,7 @@ struct BrowserView: View {
                 onSelectionChange: handleSidebarSelection,
                 onCloseTab: handleCloseSpecificTab
             )
-            .navigationSplitViewColumnWidth(min: 250, ideal: 280, max: 350)
+            .navigationSplitViewColumnWidth(min: UIConstants.Sidebar.minWidth, ideal: UIConstants.Sidebar.idealWidth, max: UIConstants.Sidebar.maxWidth)
         } detail: {
             VStack(spacing: 0) {
                 // Tab bar
@@ -68,7 +68,7 @@ struct BrowserView: View {
                 .navigationTitle("")
                 .toolbar {
                     ToolbarItemGroup(placement: .navigation) {
-                        HStack(spacing: UITheme.Spacing.xs) {
+                        HStack(spacing: UIConstants.Spacing.medium) {
                             ThemedToolbarButton(
                                 icon: "chevron.left",
                                 isDisabled: !(currentTab?.canGoBack ?? false) || !isWebContentActive()
@@ -115,7 +115,7 @@ struct BrowserView: View {
                                     addressText = newURL?.absoluteString ?? ""
                                 }
                             }
-                            .frame(minWidth: 300, maxWidth: 300)
+                            .frame(minWidth: UIConstants.AddressBar.minWidth, maxWidth: UIConstants.AddressBar.maxWidth)
                     }
                     
                     ToolbarItem(placement: .primaryAction) {
@@ -133,7 +133,7 @@ struct BrowserView: View {
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
-        .frame(minWidth: 900, minHeight: 600)
+        .frame(minWidth: UIConstants.Window.minWidth, minHeight: UIConstants.Window.minHeight)
         .managedWindow()
         .onAppear {
             setupKeyboardShortcuts()

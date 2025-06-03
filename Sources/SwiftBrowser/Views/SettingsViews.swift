@@ -113,7 +113,7 @@ struct SettingsWindowUtilitiesView: View {
                                             get: { 1.0 - windowService.transparencyLevel },
                                             set: { windowService.transparencyLevel = 1.0 - $0 }
                                         ),
-                                        in: 0.1...0.7
+                                        in: UIConstants.Transparency.minLevel...UIConstants.Transparency.maxLevel
                                     ) {
                                         Text("Transparency")
                                     } minimumValueLabel: {

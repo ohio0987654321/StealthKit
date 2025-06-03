@@ -18,13 +18,13 @@ struct TabBarView: View {
                 .frame(maxWidth: .infinity)
             }
         }
-        .frame(height: 36)
+        .frame(height: UIConstants.TabBar.height)
         .clipped()
         .background(UITheme.Colors.backgroundSecondary)
         .overlay(
             Rectangle()
-                .fill(UITheme.Colors.border)
-                .frame(height: 0.5),
+                .fill(Color.black)
+                .frame(height: UIConstants.TabBar.borderWidth),
             alignment: .bottom
         )
     }
@@ -96,16 +96,6 @@ struct TabItemView: View {
         .contextMenu {
             Button("Close Tab") {
                 onClose()
-            }
-            
-            Button("Duplicate Tab") {
-                // TODO: Implement duplicate functionality
-            }
-            
-            Divider()
-            
-            Button("Close Other Tabs") {
-                // TODO: Implement close others functionality
             }
         }
     }
