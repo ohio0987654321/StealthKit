@@ -47,7 +47,7 @@ struct HistoryView: View {
         VStack(spacing: 0) {
             // Header
             VStack(alignment: .leading, spacing: 16) {
-                Text("Browsing History")
+                Text("History Management")
                     .font(UITheme.Typography.title)
                 
                 Text("View, search, and manage your browsing history")
@@ -163,9 +163,7 @@ struct HistoryView: View {
             document: HistoryExportDocument(history: filteredHistory),
             contentType: .json,
             defaultFilename: "browsing_history_\(Date().timeIntervalSince1970)"
-        ) { result in
-            // Handle export result if needed
-        }
+        ) { _ in }
     }
     
     private func filterByTimeRange(_ items: [HistoryItem]) -> [HistoryItem] {

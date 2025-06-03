@@ -339,7 +339,7 @@ struct BrowserView: View {
             }
         }
         
-        // ⌘L shortcut functionality removed for simplification
+
     }
     
     private func removeKeyboardShortcuts() {

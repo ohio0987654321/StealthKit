@@ -1,7 +1,5 @@
 import SwiftUI
 
-// ContentType removed - everything is now a unified web tab
-
 enum SidebarItem: Hashable {
     case settingsBrowserUtilities
     case settingsWindowUtilities
@@ -41,48 +39,6 @@ struct HierarchicalSidebarView: View {
     }
 }
 
-struct SidebarSectionHeader: View {
-    let title: String
-    let icon: String
-    @Binding var isExpanded: Bool
-    var hasAddButton: Bool = false
-    var onAdd: (() -> Void)? = nil
-    
-    var body: some View {
-        HStack {
-            Button(action: {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isExpanded.toggle()
-                }
-            }) {
-                HStack(spacing: 6) {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Text(title)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.secondary)
-                }
-            }
-            .buttonStyle(PlainButtonStyle())
-            
-            Spacer()
-            
-            if hasAddButton, let onAdd = onAdd {
-                Button(action: onAdd) {
-                    Image(systemName: "plus")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-    }
-}
-
 struct SidebarSettingsItems: View {
     @Binding var selectedItem: SidebarItem?
     let onSelectionChange: (SidebarItem) -> Void
@@ -115,7 +71,7 @@ struct SidebarSettingsItems: View {
             
             SidebarRowView(
                 icon: "clock",
-                title: "History",
+                title: "History Management",
                 isSelected: selectedItem == .settingsHistory,
                 onSelect: { onSelectionChange(.settingsHistory) },
                 indentLevel: 0
