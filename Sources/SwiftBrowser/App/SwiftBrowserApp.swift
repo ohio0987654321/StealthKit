@@ -2,18 +2,17 @@ import SwiftUI
 
 @main
 struct SwiftBrowserApp: App {
+    @NSApplicationDelegateAdaptor(PanelAppDelegate.self) var appDelegate
+    
     var body: some Scene {
+        // Empty scene - actual panel is created by PanelAppDelegate
         WindowGroup {
-            BrowserView()
-                .onAppear {
-                    DispatchQueue.main.async {
-                        _ = WindowService.shared
-                    }
-                }
+            EmptyView()
         }
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 0, height: 0)
         .windowResizability(.contentSize)
-        .defaultSize(width: UIConstants.Window.defaultWidth, height: UIConstants.Window.defaultHeight)
-                .commands {
+        .commands {
             BrowserCommands()
         }
     }

@@ -143,7 +143,6 @@ struct BrowserView: View {
         }
         .navigationSplitViewStyle(.prominentDetail)
         .frame(minWidth: UIConstants.Window.minWidth, minHeight: UIConstants.Window.minHeight)
-        .managedWindow()
         .onAppear {
             setupKeyboardShortcuts()
             setupWindowManager()
