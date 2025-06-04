@@ -111,6 +111,8 @@ class DownloadManager: NSObject {
     }
     
     private func addToHistory(_ download: Download) {
+        // Prevent duplicates in history
+        downloadHistory.removeAll { $0.id == download.id }
         downloadHistory.insert(download, at: 0) // Most recent first
     }
     
@@ -119,22 +121,32 @@ class DownloadManager: NSObject {
     }
     
     private func moveToRecentDownloads(_ download: Download) {
-        cleanupDownload(download)
         removeFromActiveDownloads(download)
         
-        // Add to recent downloads temporarily
+        // Add to history immediately (Fix Bug 1)
+        addToHistory(download)
+        
+        // Add to recent downloads temporarily for popup UI
         recentDownloads.append(download)
         
-        // Set up timer to move to history after delay
+        // Set up timer to remove from recent downloads after delay
         let delay: TimeInterval = 60.0 // Keep both completed and failed downloads for 60 seconds
         
         let timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             DispatchQueue.main.async {
-                self?.moveRecentToHistory(download)
+                self?.removeFromRecentDownloads(download)
             }
         }
         
         recentDownloadTimers[download.id] = timer
+    }
+    
+    private func removeFromRecentDownloads(_ download: Download) {
+        recentDownloads.removeAll { $0.id == download.id }
+        recentDownloadTimers[download.id]?.invalidate()
+        recentDownloadTimers.removeValue(forKey: download.id)
+        // Only clean up URL now when fully removing from recent (Fix Bug 2)
+        cleanupDownload(download)
     }
     
     private func moveRecentToHistory(_ download: Download) {
@@ -146,7 +158,7 @@ class DownloadManager: NSObject {
     
     func dismissRecentDownload(_ download: Download) {
         guard recentDownloads.contains(where: { $0.id == download.id }) else { return }
-        moveRecentToHistory(download)
+        removeFromRecentDownloads(download)
     }
     
     private func moveToHistory(_ download: Download) {
