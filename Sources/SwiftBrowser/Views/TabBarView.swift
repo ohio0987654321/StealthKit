@@ -144,9 +144,15 @@ struct TabItemView: View {
                 isDropTarget = targeted
             }
         }
-        .onTapGesture {
-            onSelect()
-        }
+        .onLongPressGesture(
+            minimumDuration: 0,
+            perform: { },
+            onPressingChanged: { pressing in
+                if pressing {
+                    onSelect() // Activate immediately when pressing starts
+                }
+            }
+        )
         .onHover { hovering in
             withAnimation(UITheme.Animation.quick) {
                 isHovered = hovering
