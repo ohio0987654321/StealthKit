@@ -79,6 +79,11 @@ class BrowserViewModel {
         updateUIFromCurrentTab()
     }
     
+    func handleTabMove(from sourceIndex: Int, to destinationIndex: Int) {
+        tabService.moveTab(from: IndexSet([sourceIndex]), to: destinationIndex)
+        updateUIFromCurrentTab()
+    }
+    
     // MARK: - Navigation
     func handleAddressSubmit() {
         isAddressBarFocused = false

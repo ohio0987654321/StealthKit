@@ -119,7 +119,7 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
         // Configure panel properties
         panel.title = "Swift Browser"
         panel.center()
-        panel.isMovableByWindowBackground = true
+        panel.isMovableByWindowBackground = false
         panel.titlebarAppearsTransparent = false
         panel.titleVisibility = .visible
         panel.toolbarStyle = .unified

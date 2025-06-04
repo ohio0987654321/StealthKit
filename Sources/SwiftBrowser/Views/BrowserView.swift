@@ -29,7 +29,8 @@ struct BrowserView: View {
                         tabs: viewModel.tabs,
                         selectedTabId: viewModel.currentTab?.id,
                         onTabSelect: viewModel.handleTabSelection,
-                        onTabClose: viewModel.handleCloseTab
+                        onTabClose: viewModel.handleCloseTab,
+                        onTabMove: viewModel.handleTabMove
                     )
                 }
                 
