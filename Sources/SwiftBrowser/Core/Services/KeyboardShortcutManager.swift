@@ -104,7 +104,6 @@ extension Notification.Name {
     static let selectTab7 = Notification.Name("selectTab7")
     static let selectTab8 = Notification.Name("selectTab8")
     static let selectTab9 = Notification.Name("selectTab9")
-    static let findInPage = Notification.Name("findInPage")
 }
 
 class KeyboardShortcutManager: ObservableObject {
@@ -270,17 +269,6 @@ class KeyboardShortcutManager: ObservableObject {
             description: "Navigate to the next page",
             category: .navigation,
             notificationName: .navigateForward
-        ),
-        
-        // View
-        KeyboardShortcut(
-            id: "findInPage",
-            keyEquivalent: "f",
-            modifierMask: .command,
-            title: "Find in Page",
-            description: "Search for text in the current page",
-            category: .view,
-            notificationName: .findInPage
         )
     ]
     

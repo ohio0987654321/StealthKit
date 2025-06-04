@@ -56,9 +56,6 @@ class AppCoordinator: CoordinatorProtocol {
             browserCoordinator?.navigateBack()
         case .navigateForward:
             browserCoordinator?.navigateForward()
-        // View
-        case .findInPage:
-            browserCoordinator?.showFindInPage()
         // Settings
         case .openSettings:
             browserCoordinator?.navigateToSettings(.browserUtilities)

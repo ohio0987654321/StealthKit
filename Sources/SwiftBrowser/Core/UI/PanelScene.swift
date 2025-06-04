@@ -125,8 +125,7 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
             "selectTab9": #selector(selectTab9),
             "reload": #selector(reload),
             "navigateBack": #selector(navigateBack),
-            "navigateForward": #selector(navigateForward),
-            "findInPage": #selector(findInPage)
+            "navigateForward": #selector(navigateForward)
         ]
         return actionMap[shortcutId]
     }
@@ -197,10 +196,6 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     
     @objc private func navigateForward() {
         NotificationCenter.default.post(name: .navigateForward, object: nil)
-    }
-    
-    @objc private func findInPage() {
-        NotificationCenter.default.post(name: .findInPage, object: nil)
     }
     
     private func createMainPanel() {

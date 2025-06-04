@@ -146,8 +146,6 @@ struct WelcomeView: View {
             return "minus.magnifyingglass"
         case "resetZoom":
             return "magnifyingglass"
-        case "findInPage":
-            return "doc.text.magnifyingglass"
         case "closeWindow":
             return "xmark.square"
         case "minimizeWindow":

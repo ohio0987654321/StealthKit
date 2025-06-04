@@ -174,12 +174,6 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
         selectTab(withId: tabs[index].id)
     }
     
-    
-    func showFindInPage() {
-        // TODO: Implement find in page functionality
-        // This would require a find bar UI component
-    }
-    
     // MARK: - WebView Management
     func setCurrentWebView(_ webView: WKWebView) {
         currentWebView = webView
