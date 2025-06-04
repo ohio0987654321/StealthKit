@@ -59,6 +59,8 @@ struct BrowserView: View {
                                 HistoryView()
                             case .cookies:
                                 CookieManagementView()
+                            case .downloads:
+                                DownloadManagementView()
                             case .welcome:
                                 WelcomeView()
                             }
@@ -89,7 +91,9 @@ struct BrowserView: View {
                         )
                     }
                     
-                    ToolbarItem(placement: .primaryAction) {
+                    ToolbarItemGroup(placement: .primaryAction) {
+                        BrowserDownloadButton()
+                        
                         BrowserNewTabButton {
                             viewModel.handleNewTab()
                         }

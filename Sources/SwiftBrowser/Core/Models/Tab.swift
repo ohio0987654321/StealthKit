@@ -14,6 +14,7 @@ enum SettingsType {
     case securityPrivacy
     case history
     case cookies
+    case downloads
     case welcome
 }
 
@@ -63,6 +64,9 @@ class Tab: Identifiable, Equatable {
         case .cookies:
             self.title = "Cookie Management"
             self.favicon = Image(systemName: "list.bullet.rectangle")
+        case .downloads:
+            self.title = "Download Management"
+            self.favicon = Image(systemName: "arrow.down.circle")
         case .welcome:
             self.title = "Welcome"
             self.favicon = Image(systemName: "safari")

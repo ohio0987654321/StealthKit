@@ -135,6 +135,8 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
             navigateToSettings(.history)
         case .settingsCookies:
             navigateToSettings(.cookies)
+        case .settingsDownloads:
+            navigateToSettings(.downloads)
         case .tab(let tabId):
             selectTab(withId: tabId)
         }

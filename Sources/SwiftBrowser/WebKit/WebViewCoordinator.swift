@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import UniformTypeIdentifiers
 
 struct WebView: NSViewRepresentable {
     @Binding var tab: Tab
@@ -133,6 +134,31 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         decisionHandler(.allow)
     }
     
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, 
+                 decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+        
+        guard let response = navigationResponse.response as? HTTPURLResponse,
+              let url = response.url else {
+            decisionHandler(.allow)
+            return
+        }
+        
+        // Check if this should be treated as a download
+        if shouldDownload(response: response, for: url) {
+            // Only start download if not already downloading
+            if !DownloadManager.shared.isAlreadyDownloading(url) {
+                let suggestedFilename = response.suggestedFilename ?? url.lastPathComponent
+                let mimeType = response.mimeType
+                
+                DownloadManager.shared.startDownload(from: url, suggestedFilename: suggestedFilename, mimeType: mimeType)
+            }
+            decisionHandler(.cancel)
+            return
+        }
+        
+        decisionHandler(.allow)
+    }
+    
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, 
                  for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         // Prevent new windows/popups - handle navigation in the current tab instead
@@ -240,5 +266,78 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
             let base64String = data.base64EncodedString()
             completion(base64String)
         }.resume()
+    }
+    
+    private func shouldDownload(response: HTTPURLResponse, for url: URL) -> Bool {
+        // Check Content-Disposition header for attachment
+        if let contentDisposition = response.value(forHTTPHeaderField: "Content-Disposition"),
+           contentDisposition.contains("attachment") {
+            return true
+        }
+        
+        // Check MIME type for downloadable content
+        if let mimeType = response.mimeType {
+            return shouldDownloadMimeType(mimeType)
+        }
+        
+        // Check file extension
+        let pathExtension = url.pathExtension.lowercased()
+        return shouldDownloadFileExtension(pathExtension)
+    }
+    
+    private func shouldDownloadMimeType(_ mimeType: String) -> Bool {
+        let downloadableMimeTypes: Set<String> = [
+            // Archives
+            "application/zip",
+            "application/x-zip-compressed",
+            "application/x-rar-compressed",
+            "application/x-7z-compressed",
+            "application/x-tar",
+            "application/gzip",
+            
+            // Documents
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            
+            // Media
+            "application/octet-stream",
+            "video/mp4",
+            "video/mpeg",
+            "video/quicktime",
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+            
+            // Software
+            "application/x-apple-diskimage",
+            "application/vnd.apple.installer+xml",
+            "application/x-ms-dos-executable",
+            "application/x-msdownload"
+        ]
+        
+        return downloadableMimeTypes.contains(mimeType.lowercased())
+    }
+    
+    private func shouldDownloadFileExtension(_ fileExtension: String) -> Bool {
+        let downloadableExtensions: Set<String> = [
+            // Archives
+            "zip", "rar", "7z", "tar", "gz", "bz2",
+            
+            // Documents
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+            
+            // Media
+            "mp4", "avi", "mov", "wmv", "mp3", "wav", "aac",
+            
+            // Software
+            "dmg", "pkg", "exe", "msi", "deb", "rpm"
+        ]
+        
+        return downloadableExtensions.contains(fileExtension)
     }
 }
