@@ -10,6 +10,9 @@ class DownloadManager: NSObject {
     private(set) var downloadHistory: [Download] = []
     private var downloadedURLs: Set<URL> = []
     
+    // Simple duplicate prevention
+    private let maxConcurrentDownloads = 5
+    
     private override init() {
         super.init()
         setupURLSession()
@@ -34,6 +37,11 @@ class DownloadManager: NSObject {
             return
         }
         
+        // Limit concurrent downloads
+        guard activeDownloads.count < maxConcurrentDownloads else {
+            return
+        }
+        
         let filename = suggestedFilename ?? (url.lastPathComponent.isEmpty ? "download" : url.lastPathComponent)
         let download = Download(url: url, filename: filename, mimeType: mimeType)
         
@@ -41,10 +49,8 @@ class DownloadManager: NSObject {
         let task = urlSession.downloadTask(with: url)
         download.downloadTask = task
         
-        // Track URL to prevent duplicates
+        // Simple addition to downloads
         downloadedURLs.insert(url)
-        
-        // Add to active downloads
         activeDownloads.append(download)
         
         // Start download

@@ -101,6 +101,9 @@ struct BrowserDownloadButton: View {
         )
         .popover(isPresented: $showingDownloadPopover, arrowEdge: Edge.bottom) {
             DownloadPopover()
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(UIConstants.CornerRadius.medium)
+                .shadow(radius: 8)
         }
     }
 }

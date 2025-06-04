@@ -196,13 +196,6 @@ struct DownloadHistoryRowView: View {
                                 .buttonStyle(.borderless)
                                 .font(UITheme.Typography.caption)
                             }
-                            
-                            Button("Remove") {
-                                downloadManager.removeFromHistory(download)
-                            }
-                            .buttonStyle(.borderless)
-                            .foregroundColor(.red)
-                            .font(UITheme.Typography.caption)
                         }
                     }
                 }
