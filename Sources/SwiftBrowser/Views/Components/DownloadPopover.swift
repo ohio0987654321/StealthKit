@@ -239,25 +239,68 @@ struct DownloadRowView: View {
             return itemProvider
         }
         
-        // Add the file URL to the item provider
-        itemProvider.registerFileRepresentation(forTypeIdentifier: "public.item", fileOptions: [], visibility: .all) { completion in
+        let fileTypeService = FileTypeService.shared
+        let specificUTI = fileTypeService.getUTI(for: localURL)
+        let mimeType = fileTypeService.getMIMEType(for: localURL)
+        
+        // 1. Register file representation with specific UTI (primary)
+        itemProvider.registerFileRepresentation(
+            forTypeIdentifier: specificUTI,
+            fileOptions: .openInPlace,
+            visibility: .all
+        ) { completion in
             completion(localURL, true, nil)
             return nil
         }
         
-        // Also register as a URL for compatibility
-        itemProvider.registerDataRepresentation(forTypeIdentifier: "public.url", visibility: .all) { completion in
+        // 2. Register file representation with generic data UTI (fallback)
+        itemProvider.registerFileRepresentation(
+            forTypeIdentifier: "public.data",
+            fileOptions: .openInPlace,
+            visibility: .all
+        ) { completion in
+            completion(localURL, true, nil)
+            return nil
+        }
+        
+        // 3. Register file URL for browser compatibility
+        itemProvider.registerDataRepresentation(
+            forTypeIdentifier: "public.file-url",
+            visibility: .all
+        ) { completion in
             let urlData = localURL.absoluteString.data(using: .utf8) ?? Data()
             completion(urlData, nil)
             return nil
         }
         
-        // Register as plain text (file path)
-        itemProvider.registerDataRepresentation(forTypeIdentifier: "public.plain-text", visibility: .all) { completion in
-            let pathData = localURL.path.data(using: .utf8) ?? Data()
-            completion(pathData, nil)
+        // 4. Register as URL for web drag-and-drop
+        itemProvider.registerDataRepresentation(
+            forTypeIdentifier: "public.url",
+            visibility: .all
+        ) { completion in
+            let urlData = localURL.absoluteString.data(using: .utf8) ?? Data()
+            completion(urlData, nil)
             return nil
         }
+        
+        // 5. Register file data directly for maximum compatibility
+        if FileManager.default.fileExists(atPath: localURL.path) {
+            itemProvider.registerDataRepresentation(
+                forTypeIdentifier: specificUTI,
+                visibility: .all
+            ) { completion in
+                do {
+                    let fileData = try Data(contentsOf: localURL)
+                    completion(fileData, nil)
+                } catch {
+                    completion(nil, error)
+                }
+                return nil
+            }
+        }
+        
+        // 6. Set suggested name for the drag session
+        itemProvider.suggestedName = localURL.lastPathComponent
         
         return itemProvider
     }
