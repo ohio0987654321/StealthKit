@@ -141,11 +141,11 @@ struct ThemedToolbarButton: View {
         .disabled(isDisabled)
         .frame(width: 28, height: 28)
         .background(
-            RoundedRectangle(cornerRadius: UIConstants.CornerRadius.button)
+            RoundedRectangle(cornerRadius: UITheme.CornerRadius.button)
                 .fill(isHovered ? Color.white.opacity(0.15) : Color.clear)
         )
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: UIConstants.Animation.quick)) {
+            withAnimation(.easeInOut(duration: AnimationConstants.Timing.fast)) {
                 isHovered = hovering && !isDisabled
             }
         }

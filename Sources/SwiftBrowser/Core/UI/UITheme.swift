@@ -68,9 +68,9 @@ struct UITheme {
     }
     
     struct Animation {
-        static let quick = SwiftUI.Animation.easeInOut(duration: UIConstants.Animation.quick)
-        static let standard = SwiftUI.Animation.easeInOut(duration: UIConstants.Animation.standard)
-        static let slow = SwiftUI.Animation.easeInOut(duration: UIConstants.Animation.slow)
+        static let quick = SwiftUI.Animation.easeInOut(duration: AnimationConstants.Timing.fast)
+        static let standard = SwiftUI.Animation.easeInOut(duration: AnimationConstants.Timing.normal)
+        static let slow = SwiftUI.Animation.easeInOut(duration: AnimationConstants.Timing.slow)
         
         static let spring = SwiftUI.Animation.spring(
             response: 0.5,

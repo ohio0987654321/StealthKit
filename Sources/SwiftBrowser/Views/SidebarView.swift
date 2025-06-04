@@ -10,7 +10,7 @@ enum SidebarItem: Hashable {
 }
 
 struct HierarchicalSidebarView: View {
-    @Bindable var tabManager: TabManager
+    let tabs: [Tab]
     @Binding var selectedItem: SidebarItem?
     let onSelectionChange: (SidebarItem) -> Void
     let onCloseTab: (Tab) -> Void

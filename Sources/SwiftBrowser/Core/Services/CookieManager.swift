@@ -9,6 +9,7 @@ class CookieManager {
     
     private init() {}
     
+    @MainActor
     func loadCookies() async {
         let cookieStore = WKWebsiteDataStore.default().httpCookieStore
         
@@ -35,11 +36,10 @@ class CookieManager {
             groupedCookies[cookie.domain]?.append(cookieItem)
         }
         
-        await MainActor.run {
-            self.cookiesByDomain = groupedCookies
-        }
+        self.cookiesByDomain = groupedCookies
     }
     
+    @MainActor
     func clearAllCookies() async {
         let cookieStore = WKWebsiteDataStore.default().httpCookieStore
         
@@ -57,11 +57,10 @@ class CookieManager {
             }
         }
         
-        await MainActor.run {
-            self.cookiesByDomain.removeAll()
-        }
+        self.cookiesByDomain.removeAll()
     }
     
+    @MainActor
     func clearCookiesForDomain(_ domain: String) async {
         let cookieStore = WKWebsiteDataStore.default().httpCookieStore
         
@@ -81,9 +80,7 @@ class CookieManager {
             }
         }
         
-        await MainActor.run {
-            self.cookiesByDomain.removeValue(forKey: domain)
-        }
+        _ = self.cookiesByDomain.removeValue(forKey: domain)
     }
     
     func getAllDomains() -> [String] {
@@ -96,19 +93,19 @@ class CookieManager {
     
     // Synchronous wrapper methods for UI
     func refreshCookies() {
-        Task {
+        Task { @MainActor in
             await loadCookies()
         }
     }
     
     func deleteAllCookies() {
-        Task {
+        Task { @MainActor in
             await clearAllCookies()
         }
     }
     
     func deleteCookies(for domain: String) {
-        Task {
+        Task { @MainActor in
             await clearCookiesForDomain(domain)
         }
     }

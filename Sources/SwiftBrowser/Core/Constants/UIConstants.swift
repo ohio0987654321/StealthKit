@@ -8,6 +8,8 @@ struct UIConstants {
         static let minHeight: CGFloat = 600
         static let defaultWidth: CGFloat = 1200
         static let defaultHeight: CGFloat = 800
+        static let defaultX: CGFloat = 100
+        static let defaultY: CGFloat = 100
     }
     
     // MARK: - Sidebar Dimensions
@@ -31,15 +33,9 @@ struct UIConstants {
     
     // MARK: - Transparency
     struct Transparency {
-        static let minLevel: Double = 0.1
-        static let maxLevel: Double = 0.7
-    }
-    
-    // MARK: - Animation Durations
-    struct Animation {
-        static let quick: Double = 0.15
-        static let standard: Double = 0.25
-        static let slow: Double = 0.35
+        static let minLevel: Double = 0.3
+        static let maxLevel: Double = 1.0
+        static let defaultLevel: Double = 0.9
     }
     
     // MARK: - Corner Radius
@@ -58,5 +54,12 @@ struct UIConstants {
         static let large: CGFloat = 12
         static let xlarge: CGFloat = 16
         static let xxlarge: CGFloat = 20
+    }
+    
+    // MARK: - Layout
+    struct Layout {
+        static let toolbarHeight: CGFloat = 44
+        static let statusBarHeight: CGFloat = 22
+        static let minimumTouchTarget: CGFloat = 44
     }
 }

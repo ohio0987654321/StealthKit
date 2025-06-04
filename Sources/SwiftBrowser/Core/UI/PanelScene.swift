@@ -8,6 +8,9 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     private var isActivationPolicyChangeInProgress = false
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Initialize app manager and coordinator
+        _ = AppManager.shared
+        
         // Set up menu bar
         setupMenuBar()
         WindowService.shared.panelDelegate = self
@@ -22,7 +25,7 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
         )
         
         // Ensure panel is visible after startup
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + AnimationConstants.Window.panelShowDelay) {
             if let panel = self.mainPanel, !panel.isVisible {
                 panel.makeKeyAndOrderFront(nil)
             }
@@ -93,8 +96,8 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
         
         // Create the panel with proper dimensions
         let contentRect = NSRect(
-            x: 100, 
-            y: 100, 
+            x: UIConstants.Window.defaultX, 
+            y: UIConstants.Window.defaultY, 
             width: UIConstants.Window.defaultWidth, 
             height: UIConstants.Window.defaultHeight
         )
@@ -223,7 +226,7 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     }
     
     func windowService(_ service: WindowService, didChangeActivationPolicy isAccessory: Bool) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + AnimationConstants.Window.activationPolicyChangeDelay) {
             self.isActivationPolicyChangeInProgress = false
         }
     }

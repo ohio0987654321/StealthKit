@@ -3,37 +3,39 @@ import WebKit
 import AppKit
 
 struct BrowserView: View {
-    @State private var tabManager = TabManager()
-    @State private var addressText: String = ""
+    @State private var viewModel: BrowserViewModel
     @FocusState private var isAddressBarFocused: Bool
-    @State private var currentWebView: WKWebView?
-    @State private var selectedSidebarItem: SidebarItem? = nil
     @Environment(\.dismiss) private var dismiss
+    
+    init() {
+        let coordinator = BrowserCoordinator()
+        _viewModel = State(initialValue: BrowserViewModel(coordinator: coordinator))
+    }
     
     var body: some View {
         NavigationSplitView {
             HierarchicalSidebarView(
-                tabManager: tabManager,
-                selectedItem: $selectedSidebarItem,
-                onSelectionChange: handleSidebarSelection,
-                onCloseTab: handleCloseSpecificTab
+                tabs: viewModel.tabs,
+                selectedItem: $viewModel.selectedSidebarItem,
+                onSelectionChange: viewModel.handleSidebarSelection,
+                onCloseTab: viewModel.handleCloseTab
             )
             .navigationSplitViewColumnWidth(min: UIConstants.Sidebar.minWidth, ideal: UIConstants.Sidebar.idealWidth, max: UIConstants.Sidebar.maxWidth)
         } detail: {
             VStack(spacing: 0) {
                 // Tab bar
-                if !tabManager.tabs.isEmpty {
+                if !viewModel.tabs.isEmpty {
                     TabBarView(
-                        tabs: tabManager.tabs,
-                        selectedTabId: tabManager.currentTab?.id,
-                        onTabSelect: handleTabSelection,
-                        onTabClose: handleCloseSpecificTab
+                        tabs: viewModel.tabs,
+                        selectedTabId: viewModel.currentTab?.id,
+                        onTabSelect: viewModel.handleTabSelection,
+                        onTabClose: viewModel.handleCloseTab
                     )
                 }
                 
                 // Main content area
                 ZStack {
-                    if let tab = tabManager.currentTab {
+                    if let tab = viewModel.currentTab {
                         switch tab.tabType {
                         case .empty:
                             EmptyTabView()
@@ -41,12 +43,8 @@ struct BrowserView: View {
                         case .web:
                             WebView(
                                 tab: .constant(tab),
-                                onNavigationChange: { updatedTab in
-                                    tabManager.updateTab(updatedTab)
-                                },
-                                onWebViewCreated: { webView in
-                                    currentWebView = webView
-                                }
+                                onNavigationChange: viewModel.handleNavigationChange,
+                                onWebViewCreated: viewModel.handleWebViewCreated
                             )
                             .id(tab.id)
                         case .settings(let settingsType):
@@ -73,42 +71,27 @@ struct BrowserView: View {
                 .toolbar {
                     ToolbarItemGroup(placement: .navigation) {
                         BrowserNavigationButtons(
-                            currentTab: .constant(tabManager.currentTab),
-                            onNavigateBack: {
-                                currentWebView?.goBack()
-                            },
-                            onNavigateForward: {
-                                currentWebView?.goForward()
-                            },
-                            onReloadOrStop: {
-                                if let webView = currentWebView {
-                                    if tabManager.currentTab?.isLoading == true {
-                                        webView.stopLoading()
-                                    } else {
-                                        webView.reload()
-                                    }
-                                }
-                            },
-                            isWebContentActive: tabManager.isWebContentActive(for: tabManager.currentTab)
+                            currentTab: .constant(viewModel.currentTab),
+                            onNavigateBack: viewModel.handleNavigateBack,
+                            onNavigateForward: viewModel.handleNavigateForward,
+                            onReloadOrStop: viewModel.handleReloadOrStop,
+                            isWebContentActive: viewModel.isWebContentActive
                         )
                     }
                     
                     ToolbarItem(placement: .principal) {
                         BrowserAddressField(
-                            addressText: $addressText,
+                            addressText: $viewModel.addressText,
                             isAddressBarFocused: $isAddressBarFocused,
-                            currentTab: .constant(tabManager.currentTab),
-                            onSubmit: handleAddressSubmit,
-                            isWebContentActive: tabManager.isWebContentActive(for: tabManager.currentTab)
+                            currentTab: .constant(viewModel.currentTab),
+                            onSubmit: viewModel.handleAddressSubmit,
+                            isWebContentActive: viewModel.isWebContentActive
                         )
                     }
                     
                     ToolbarItem(placement: .primaryAction) {
                         BrowserNewTabButton {
-                            let newTab = tabManager.createNewTab()
-                            selectedSidebarItem = .tab(newTab.id)
-                            currentWebView = nil
-                            addressText = ""
+                            viewModel.handleNewTab()
                         }
                     }
                 }
@@ -119,89 +102,11 @@ struct BrowserView: View {
         .onAppear {
             setupKeyboardShortcuts()
             setupWindowManager()
-            tabManager.ensureWelcomeTab()
-            updateUIFromCurrentTab()
+            viewModel.onAppear()
         }
         .onDisappear {
             removeKeyboardShortcuts()
-        }
-        .onChange(of: tabManager.currentTab) { _, newTab in
-            updateUIFromCurrentTab()
-        }
-    }
-    
-    private func updateUIFromCurrentTab() {
-        if let tab = tabManager.currentTab {
-            selectedSidebarItem = .tab(tab.id)
-            addressText = tab.url?.absoluteString ?? ""
-        }
-    }
-    
-    private func handleTabSelection(_ tabId: UUID) {
-        tabManager.selectTab(withId: tabId)
-        currentWebView = nil // Reset web view reference when switching tabs
-    }
-    
-    private func handleSidebarSelection(_ item: SidebarItem) {
-        selectedSidebarItem = item
-        
-        switch item {
-        case .settingsBrowserUtilities:
-            tabManager.createSettingsTab(type: .browserUtilities)
-            currentWebView = nil
-            addressText = ""
-        case .settingsWindowUtilities:
-            tabManager.createSettingsTab(type: .windowUtilities)
-            currentWebView = nil
-            addressText = ""
-        case .settingsSecurityPrivacy:
-            tabManager.createSettingsTab(type: .securityPrivacy)
-            currentWebView = nil
-            addressText = ""
-        case .settingsHistory:
-            tabManager.createSettingsTab(type: .history)
-            currentWebView = nil
-            addressText = ""
-        case .settingsCookies:
-            tabManager.createSettingsTab(type: .cookies)
-            currentWebView = nil
-            addressText = ""
-        case .tab(let tabId):
-            tabManager.selectTab(withId: tabId)
-            currentWebView = nil
-        }
-        
-        updateUIFromCurrentTab()
-    }
-    
-    private func handleAddressSubmit() {
-        isAddressBarFocused = false
-        
-        guard let url = tabManager.createURL(from: addressText) else { return }
-        
-        if let currentTab = tabManager.currentTab {
-            if case .empty = currentTab.tabType {
-                // Convert empty tab to web tab
-                let newWebTab = Tab(url: url)
-                tabManager.replaceCurrentTab(with: newWebTab)
-                selectedSidebarItem = .tab(newWebTab.id)
-                currentWebView = nil // Reset web view to force recreation
-            } else if case .settings = currentTab.tabType {
-                // Convert settings tab to web tab
-                let newWebTab = Tab(url: url)
-                tabManager.replaceCurrentTab(with: newWebTab)
-                selectedSidebarItem = .tab(newWebTab.id)
-                currentWebView = nil // Reset web view to force recreation
-            } else {
-                // Navigate current web tab
-                currentTab.url = url
-                currentWebView?.load(URLRequest(url: url))
-            }
-        } else {
-            // Create new tab
-            let newTab = tabManager.createNewTab(with: url)
-            selectedSidebarItem = .tab(newTab.id)
-            currentWebView = nil
+            viewModel.onDisappear()
         }
     }
     
@@ -211,10 +116,7 @@ struct BrowserView: View {
             object: nil,
             queue: .main
         ) { _ in
-            let newTab = tabManager.createNewTab()
-            selectedSidebarItem = .tab(newTab.id)
-            currentWebView = nil
-            addressText = ""
+            viewModel.handleNewTab()
         }
         
         NotificationCenter.default.addObserver(
@@ -222,7 +124,7 @@ struct BrowserView: View {
             object: nil,
             queue: .main
         ) { _ in
-            handleCloseTab()
+            viewModel.handleCloseCurrentTab()
         }
         
         NotificationCenter.default.addObserver(
@@ -230,13 +132,7 @@ struct BrowserView: View {
             object: nil,
             queue: .main
         ) { _ in
-            if let webView = currentWebView {
-                if tabManager.currentTab?.isLoading == true {
-                    webView.stopLoading()
-                } else {
-                    webView.reload()
-                }
-            }
+            viewModel.handleReloadOrStop()
         }
         
         NotificationCenter.default.addObserver(
@@ -254,31 +150,5 @@ struct BrowserView: View {
     
     private func setupWindowManager() {
         _ = WindowService.shared
-    }
-    
-    private func handleCloseTab() {
-        tabManager.closeCurrentTab()
-        
-        if tabManager.tabs.isEmpty {
-            tabManager.ensureWelcomeTab()
-        }
-        
-        currentWebView = nil
-        updateUIFromCurrentTab()
-    }
-    
-    private func handleCloseSpecificTab(_ tab: Tab) {
-        let wasCurrentTab = tabManager.currentTab?.id == tab.id
-        tabManager.closeTab(withId: tab.id)
-        
-        if tabManager.tabs.isEmpty {
-            tabManager.ensureWelcomeTab()
-        }
-        
-        if wasCurrentTab {
-            currentWebView = nil
-        }
-        
-        updateUIFromCurrentTab()
     }
 }

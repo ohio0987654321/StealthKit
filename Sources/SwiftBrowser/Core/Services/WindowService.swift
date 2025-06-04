@@ -142,18 +142,18 @@ class WindowService {
     
     // MARK: - Transparency Management
     private func setWindowTransparency(_ window: NSWindow, level: Double) {
-        let clampedLevel = max(0.3, min(1.0, level))
+        let clampedLevel = max(UIConstants.Transparency.minLevel, min(UIConstants.Transparency.maxLevel, level))
         window.alphaValue = clampedLevel
         
         // Ensure content remains readable
         if let contentView = window.contentView {
-            contentView.alphaValue = 1.0
+            contentView.alphaValue = UIConstants.Transparency.maxLevel
         }
     }
     
     private func applyTransparencyToAllWindows() {
         for window in managedWindows {
-            setWindowTransparency(window, level: isTransparencyEnabled ? transparencyLevel : 1.0)
+            setWindowTransparency(window, level: isTransparencyEnabled ? transparencyLevel : UIConstants.Transparency.maxLevel)
         }
     }
     
@@ -217,7 +217,7 @@ class WindowService {
         // For panels, use centralized toolbar management to avoid conflicts
         if let panel = window as? NSPanel {
             // Small delay to let collection behavior settle before toolbar fixes
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + AnimationConstants.Window.toolbarConfigurationDelay) {
                 self.ensureToolbarVisibility(panel)
             }
         }
@@ -263,7 +263,7 @@ class WindowService {
                 self.panelDelegate?.windowService(self, didChangeActivationPolicy: self.isAccessoryApp)
             } else {
                 self.removeMenuBarIcon()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + AnimationConstants.Window.panelShowDelay) {
                     NSApp.setActivationPolicy(.regular)
                     self.panelDelegate?.windowService(self, didChangeActivationPolicy: self.isAccessoryApp)
                 }
