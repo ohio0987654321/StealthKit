@@ -86,6 +86,7 @@ struct ActiveDownloadsView: View {
 struct DownloadRowView: View {
     let download: Download
     @State private var downloadManager = DownloadManager.shared
+    @State private var isDragging = false
     
     private var statusText: String {
         switch download.state {
@@ -210,12 +211,55 @@ struct DownloadRowView: View {
         .padding(UIConstants.Spacing.small)
         .background(
             RoundedRectangle(cornerRadius: UIConstants.CornerRadius.small)
-                .fill(Color(NSColor.controlBackgroundColor))
+                .fill(isDragging ? Color.blue.opacity(0.1) : Color(NSColor.controlBackgroundColor))
                 .overlay(
                     RoundedRectangle(cornerRadius: UIConstants.CornerRadius.small)
-                        .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
+                        .stroke(isDragging ? Color.blue.opacity(0.3) : Color(NSColor.separatorColor), lineWidth: 0.5)
                 )
         )
+        .scaleEffect(isDragging ? 0.95 : 1.0)
+        .animation(.easeInOut(duration: 0.15), value: isDragging)
+        .onDrag {
+            isDragging = true
+            return createDragContent()
+        }
+        .simultaneousGesture(
+            DragGesture()
+                .onEnded { _ in
+                    isDragging = false
+                }
+        )
+    }
+    
+    private func createDragContent() -> NSItemProvider {
+        let itemProvider = NSItemProvider()
+        
+        // Only allow dragging completed downloads
+        guard download.state == .completed, let localURL = download.localURL else {
+            return itemProvider
+        }
+        
+        // Add the file URL to the item provider
+        itemProvider.registerFileRepresentation(forTypeIdentifier: "public.item", fileOptions: [], visibility: .all) { completion in
+            completion(localURL, true, nil)
+            return nil
+        }
+        
+        // Also register as a URL for compatibility
+        itemProvider.registerDataRepresentation(forTypeIdentifier: "public.url", visibility: .all) { completion in
+            let urlData = localURL.absoluteString.data(using: .utf8) ?? Data()
+            completion(urlData, nil)
+            return nil
+        }
+        
+        // Register as plain text (file path)
+        itemProvider.registerDataRepresentation(forTypeIdentifier: "public.plain-text", visibility: .all) { completion in
+            let pathData = localURL.path.data(using: .utf8) ?? Data()
+            completion(pathData, nil)
+            return nil
+        }
+        
+        return itemProvider
     }
 }
 

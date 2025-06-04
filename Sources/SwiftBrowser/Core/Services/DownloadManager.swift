@@ -82,6 +82,21 @@ class DownloadManager: NSObject {
         downloadHistory.removeAll()
     }
     
+    func addScreenshot(_ download: Download) {
+        // Add screenshot directly to recent downloads and history
+        recentDownloads.append(download)
+        addToHistory(download)
+        
+        // Set up timer to remove from recent downloads after delay
+        let delay: TimeInterval = 60.0
+        let timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.removeFromRecentDownloads(download)
+            }
+        }
+        recentDownloadTimers[download.id] = timer
+    }
+    
     func openInFinder(_ download: Download) {
         guard let localURL = download.localURL else { return }
         NSWorkspace.shared.selectFile(localURL.path, inFileViewerRootedAtPath: "")

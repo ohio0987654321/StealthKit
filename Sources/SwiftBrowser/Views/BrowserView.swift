@@ -106,6 +106,43 @@ struct BrowserView: View {
                         ))
                         .animation(.easeInOut(duration: AnimationConstants.Timing.medium), value: viewModel.showingDownloadOverlay)
                     }
+                    
+                    // Screenshot overlay - integrated within the main window
+                    if viewModel.showingScreenshotOverlay {
+                        Rectangle()
+                            .fill(Color.clear)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                viewModel.hideScreenshotOverlay()
+                            }
+                            .zIndex(1001)
+                        
+                        VStack {
+                            HStack {
+                                Spacer()
+                                ScreenshotPopover(onDismiss: viewModel.hideScreenshotOverlay)
+                                    .frame(width: UIConstants.ScreenshotPopover.width)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: UIConstants.CornerRadius.medium)
+                                            .fill(Color(NSColor.controlBackgroundColor))
+                                            .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: UIConstants.CornerRadius.medium)
+                                            .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                                    )
+                                    .padding(.trailing, 16)
+                            }
+                            Spacer()
+                        }
+                        .padding(.top, 8)
+                        .zIndex(1002)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)),
+                            removal: .opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing))
+                        ))
+                        .animation(.easeInOut(duration: AnimationConstants.Timing.medium), value: viewModel.showingScreenshotOverlay)
+                    }
                 }
                 .navigationTitle("")
                 .toolbar {
@@ -130,6 +167,8 @@ struct BrowserView: View {
                     }
                     
                     ToolbarItemGroup(placement: .primaryAction) {
+                        ScreenshotToolbarButton(onToggleScreenshotPopover: viewModel.toggleScreenshotOverlay)
+                        
                         BrowserDownloadButton(onToggleDownloadOverlay: viewModel.toggleDownloadOverlay)
                         
                         BrowserNewTabButton {

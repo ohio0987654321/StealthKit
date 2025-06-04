@@ -15,6 +15,7 @@ class BrowserViewModel {
     var currentWebView: WKWebView?
     var selectedSidebarItem: SidebarItem?
     var showingDownloadOverlay: Bool = false
+    var showingScreenshotOverlay: Bool = false
     
     // Computed Properties
     var currentTab: Tab? {
@@ -147,5 +148,14 @@ class BrowserViewModel {
     
     func hideDownloadOverlay() {
         showingDownloadOverlay = false
+    }
+    
+    // MARK: - Screenshot Management
+    func toggleScreenshotOverlay() {
+        showingScreenshotOverlay.toggle()
+    }
+    
+    func hideScreenshotOverlay() {
+        showingScreenshotOverlay = false
     }
 }
