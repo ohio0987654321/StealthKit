@@ -2,20 +2,25 @@ import SwiftUI
 
 struct WelcomeView: View {
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
-            
-            // Hero section
-            heroSection
-                .padding(.bottom, 40)
-            
-            // Keyboard shortcuts section
-            shortcutsSection
-            
-            Spacer()
+        ScrollView {
+            VStack(spacing: 0) {
+                Spacer()
+                    .frame(height: 40)
+                
+                // Hero section
+                heroSection
+                    .padding(.bottom, 40)
+                
+                // Keyboard shortcuts section
+                shortcutsSection
+                
+                Spacer()
+                    .frame(height: 40)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 40)
     }
     
     // MARK: - Hero Section
@@ -47,16 +52,20 @@ struct WelcomeView: View {
     
     // MARK: - Shortcuts Section
     private var shortcutsSection: some View {
-        VStack(spacing: 16) {
+        let shortcutManager = KeyboardShortcutManager.shared
+        let shortcutsByCategory = shortcutManager.shortcutsByCategory()
+        
+        return VStack(spacing: 16) {
             Text("Keyboard Shortcuts")
                 .font(.system(.headline, design: .rounded, weight: .medium))
                 .foregroundStyle(.primary)
             
-            VStack(spacing: 8) {
-                shortcutRow("⌘T", "New Tab", "plus")
-                shortcutRow("⌘W", "Close Tab", "xmark")
-                shortcutRow("⌘R", "Reload", "arrow.clockwise")
-                shortcutRow("⌘L", "Address Bar", "magnifyingglass")
+            VStack(spacing: 12) {
+                ForEach(ShortcutCategory.allCases, id: \.self) { category in
+                    if let shortcuts = shortcutsByCategory[category], !shortcuts.isEmpty {
+                        shortcutCategorySection(category: category, shortcuts: shortcuts)
+                    }
+                }
             }
         }
         .padding(20)
@@ -70,6 +79,29 @@ struct WelcomeView: View {
         )
     }
     
+    // MARK: - Shortcut Category Section
+    private func shortcutCategorySection(category: ShortcutCategory, shortcuts: [KeyboardShortcut]) -> some View {
+        VStack(spacing: 6) {
+            HStack {
+                Image(systemName: category.icon)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(UITheme.Colors.accent)
+                
+                Text(category.rawValue)
+                    .font(.system(.caption, design: .rounded, weight: .medium))
+                    .foregroundStyle(.primary)
+                
+                Spacer()
+            }
+            
+            VStack(spacing: 4) {
+                ForEach(shortcuts.prefix(4), id: \.id) { shortcut in
+                    shortcutRow(shortcut.displayKeyEquivalent, shortcut.title, getIconForShortcut(shortcut))
+                }
+            }
+        }
+    }
+    
     // MARK: - Shortcut Row
     private func shortcutRow(_ shortcut: String, _ description: String, _ icon: String) -> some View {
         HStack(spacing: 12) {
@@ -81,7 +113,7 @@ struct WelcomeView: View {
             Text(shortcut)
                 .font(.system(.caption, design: .monospaced, weight: .semibold))
                 .foregroundStyle(.primary)
-                .frame(width: 24, alignment: .leading)
+                .frame(minWidth: 60, alignment: .leading)
             
             Text(description)
                 .font(.system(.caption, design: .rounded))
@@ -90,6 +122,40 @@ struct WelcomeView: View {
             Spacer()
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
+    }
+    
+    // MARK: - Icon Helper
+    private func getIconForShortcut(_ shortcut: KeyboardShortcut) -> String {
+        switch shortcut.id {
+        case "newTab":
+            return "plus"
+        case "closeTab":
+            return "xmark"
+        case "reload", "hardReload":
+            return "arrow.clockwise"
+        case "focusAddressBar":
+            return "magnifyingglass"
+        case "navigateBack":
+            return "chevron.left"
+        case "navigateForward":
+            return "chevron.right"
+        case "zoomIn":
+            return "plus.magnifyingglass"
+        case "zoomOut":
+            return "minus.magnifyingglass"
+        case "resetZoom":
+            return "magnifyingglass"
+        case "findInPage":
+            return "doc.text.magnifyingglass"
+        case "closeWindow":
+            return "xmark.square"
+        case "minimizeWindow":
+            return "minus.square"
+        case "nextTab", "previousTab":
+            return "arrow.left.arrow.right"
+        default:
+            return "keyboard"
+        }
     }
 }

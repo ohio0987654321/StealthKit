@@ -192,37 +192,15 @@ struct BrowserView: View {
     }
     
     private func setupKeyboardShortcuts() {
-        NotificationCenter.default.addObserver(
-            forName: .newTab,
-            object: nil,
-            queue: .main
-        ) { _ in
-            viewModel.handleNewTab()
-        }
-        
-        NotificationCenter.default.addObserver(
-            forName: .closeTab,
-            object: nil,
-            queue: .main
-        ) { _ in
-            viewModel.handleCloseCurrentTab()
-        }
-        
-        NotificationCenter.default.addObserver(
-            forName: .reload,
-            object: nil,
-            queue: .main
-        ) { _ in
-            viewModel.handleReloadOrStop()
-        }
-        
-        NotificationCenter.default.addObserver(
-            forName: .focusAddressBar,
-            object: nil,
-            queue: .main
-        ) { _ in
-            isAddressBarFocused = true
-        }
+        // Observer for coordinator focus requests
+        viewModel.coordinator.$shouldFocusAddressBar
+            .receive(on: DispatchQueue.main)
+            .sink { shouldFocus in
+                if shouldFocus {
+                    isAddressBarFocused = true
+                }
+            }
+            .store(in: &viewModel.cancellables)
     }
     
     private func removeKeyboardShortcuts() {

@@ -8,6 +8,7 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     
     private let tabService = TabService.shared
     private var currentWebView: WKWebView?
+    private var closedTabs: [Tab] = [] // Track closed tabs
     
     // Events for communication with views
     @Published var shouldFocusAddressBar = false
@@ -53,6 +54,15 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     }
     
     func closeTab(withId tabId: UUID) {
+        // Find and save the tab before closing it (all tab types)
+        if let tabToClose = tabService.tabs.first(where: { $0.id == tabId }) {
+            closedTabs.append(tabToClose)
+            // Keep only the last 10 closed tabs
+            if closedTabs.count > 10 {
+                closedTabs.removeFirst()
+            }
+        }
+        
         let wasCurrentTab = tabService.currentTab?.id == tabId
         tabService.closeTab(withId: tabId)
         
@@ -78,18 +88,30 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     // MARK: - Tab Management
     func selectTab(withId tabId: UUID) {
         tabService.selectTab(withId: tabId)
-        currentWebView = nil // Reset web view reference when switching tabs
+        // Don't reset currentWebView - let the new WebView update it
         updateSelectedSidebarItem()
     }
     
     func closeCurrentTab() {
+        // Save current tab before closing (all tab types)
+        if let currentTab = tabService.currentTab {
+            closedTabs.append(currentTab)
+            // Keep only the last 10 closed tabs
+            if closedTabs.count > 10 {
+                closedTabs.removeFirst()
+            }
+        }
+        
         tabService.closeCurrentTab()
         
         if tabService.tabs.isEmpty {
             tabService.ensureWelcomeTab()
         }
         
-        currentWebView = nil
+        // Only reset currentWebView if no tabs remain
+        if tabService.tabs.isEmpty {
+            currentWebView = nil
+        }
         updateSelectedSidebarItem()
     }
     
@@ -105,6 +127,57 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     
     func focusAddressBar() {
         shouldFocusAddressBar = true
+    }
+    
+    func reopenClosedTab() {
+        guard let lastClosedTab = closedTabs.popLast() else { return }
+        
+        // Create new tab based on the closed tab's type
+        let newTab: Tab
+        switch lastClosedTab.tabType {
+        case .empty:
+            newTab = tabService.createTab()
+        case .web:
+            newTab = tabService.createTab(with: lastClosedTab.url)
+        case .settings(let settingsType):
+            newTab = tabService.createSettingsTab(type: settingsType)
+        }
+        
+        // Restore the original title
+        newTab.title = lastClosedTab.title
+        
+        selectedSidebarItem = .tab(newTab.id)
+        currentWebView = nil
+    }
+    
+    func selectNextTab() {
+        let tabs = tabService.tabs
+        guard let currentTab = tabService.currentTab,
+              let currentIndex = tabs.firstIndex(where: { $0.id == currentTab.id }) else { return }
+        
+        let nextIndex = (currentIndex + 1) % tabs.count
+        selectTab(withId: tabs[nextIndex].id)
+    }
+    
+    func selectPreviousTab() {
+        let tabs = tabService.tabs
+        guard let currentTab = tabService.currentTab,
+              let currentIndex = tabs.firstIndex(where: { $0.id == currentTab.id }) else { return }
+        
+        let previousIndex = currentIndex > 0 ? currentIndex - 1 : tabs.count - 1
+        selectTab(withId: tabs[previousIndex].id)
+    }
+    
+    func selectTab(at index: Int) {
+        let tabs = tabService.tabs
+        guard index >= 0 && index < tabs.count else { return }
+        selectTab(withId: tabs[index].id)
+    }
+    
+    
+    func showFindInPage() {
+        // TODO: Implement find in page functionality
+        // This would require a find bar UI component
     }
     
     // MARK: - WebView Management

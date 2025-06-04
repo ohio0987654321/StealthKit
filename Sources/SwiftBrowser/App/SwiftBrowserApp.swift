@@ -1,11 +1,12 @@
 import Foundation
 import SwiftUI
 
+// Note: Notification names are now managed by KeyboardShortcutManager
+// This file maintains existing notification names for backward compatibility
 extension Notification.Name {
     static let newTab = Notification.Name("newTab")
     static let closeTab = Notification.Name("closeTab")
     static let reload = Notification.Name("reload")
-    static let focusAddressBar = Notification.Name("focusAddressBar")
     static let openSettings = Notification.Name("openSettings")
 }
 
@@ -19,38 +20,22 @@ class AppManager: ObservableObject {
     }
     
     private func setupNotificationObservers() {
-        NotificationCenter.default.addObserver(
-            forName: .newTab,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            self?.appCoordinator.handleNotification(notification)
+        let shortcutManager = KeyboardShortcutManager.shared
+        
+        // Set up observers for all keyboard shortcuts
+        for shortcut in shortcutManager.shortcuts {
+            if let notificationName = shortcut.notificationName {
+                NotificationCenter.default.addObserver(
+                    forName: notificationName,
+                    object: nil,
+                    queue: .main
+                ) { [weak self] notification in
+                    self?.appCoordinator.handleNotification(notification)
+                }
+            }
         }
         
-        NotificationCenter.default.addObserver(
-            forName: .closeTab,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            self?.appCoordinator.handleNotification(notification)
-        }
-        
-        NotificationCenter.default.addObserver(
-            forName: .reload,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            self?.appCoordinator.handleNotification(notification)
-        }
-        
-        NotificationCenter.default.addObserver(
-            forName: .focusAddressBar,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            self?.appCoordinator.handleNotification(notification)
-        }
-        
+        // Keep the settings observer
         NotificationCenter.default.addObserver(
             forName: .openSettings,
             object: nil,

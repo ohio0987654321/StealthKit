@@ -41,6 +41,8 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     }
     
     private func setupMenuBar() {
+        let shortcutManager = KeyboardShortcutManager.shared
+        
         // Create main menu
         let mainMenu = NSMenu()
         
@@ -51,24 +53,82 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
         appMenuItem.submenu = appMenu
         mainMenu.addItem(appMenuItem)
         
-        // File menu
+        // File menu (Tab Management)
         let fileMenuItem = NSMenuItem(title: "File", action: nil, keyEquivalent: "")
         let fileMenu = NSMenu(title: "File")
-        fileMenu.addItem(NSMenuItem(title: "New Tab", action: #selector(newTab), keyEquivalent: "n"))
-        fileMenu.addItem(NSMenuItem(title: "Close Tab", action: #selector(closeTab), keyEquivalent: "w"))
+        
+        let tabShortcuts = shortcutManager.shortcuts(for: .tab)
+        for shortcut in tabShortcuts {
+            if let action = getMenuAction(for: shortcut.id) {
+                let menuItem = NSMenuItem(
+                    title: shortcut.title,
+                    action: action,
+                    keyEquivalent: shortcut.keyEquivalent
+                )
+                menuItem.keyEquivalentModifierMask = shortcut.modifierMask
+                fileMenu.addItem(menuItem)
+            }
+        }
+        
         fileMenuItem.submenu = fileMenu
         mainMenu.addItem(fileMenuItem)
         
-        // View menu
+        // View menu (Navigation and View shortcuts)
         let viewMenuItem = NSMenuItem(title: "View", action: nil, keyEquivalent: "")
         let viewMenu = NSMenu(title: "View")
-        viewMenu.addItem(NSMenuItem(title: "Reload", action: #selector(reload), keyEquivalent: "r"))
-        let addressBarItem = NSMenuItem(title: "Select Address Bar", action: #selector(focusAddressBar), keyEquivalent: "l")
-        viewMenu.addItem(addressBarItem)
+        
+        let navigationShortcuts = shortcutManager.shortcuts(for: .navigation)
+        let viewShortcuts = shortcutManager.shortcuts(for: .view)
+        
+        for shortcut in navigationShortcuts + viewShortcuts {
+            if let action = getMenuAction(for: shortcut.id) {
+                let menuItem = NSMenuItem(
+                    title: shortcut.title,
+                    action: action,
+                    keyEquivalent: shortcut.keyEquivalent
+                )
+                menuItem.keyEquivalentModifierMask = shortcut.modifierMask
+                viewMenu.addItem(menuItem)
+            }
+        }
+        
         viewMenuItem.submenu = viewMenu
         mainMenu.addItem(viewMenuItem)
         
+        // Window menu
+        let windowMenuItem = NSMenuItem(title: "Window", action: nil, keyEquivalent: "")
+        let windowMenu = NSMenu(title: "Window")
+        
+        // No window shortcuts currently available
+        
+        windowMenuItem.submenu = windowMenu
+        mainMenu.addItem(windowMenuItem)
+        
         NSApp.mainMenu = mainMenu
+    }
+    
+    private func getMenuAction(for shortcutId: String) -> Selector? {
+        let actionMap: [String: Selector] = [
+            "newTab": #selector(newTab),
+            "closeTab": #selector(closeTab),
+            "reopenClosedTab": #selector(reopenClosedTab),
+            "nextTab": #selector(nextTab),
+            "previousTab": #selector(previousTab),
+            "selectTab1": #selector(selectTab1),
+            "selectTab2": #selector(selectTab2),
+            "selectTab3": #selector(selectTab3),
+            "selectTab4": #selector(selectTab4),
+            "selectTab5": #selector(selectTab5),
+            "selectTab6": #selector(selectTab6),
+            "selectTab7": #selector(selectTab7),
+            "selectTab8": #selector(selectTab8),
+            "selectTab9": #selector(selectTab9),
+            "reload": #selector(reload),
+            "navigateBack": #selector(navigateBack),
+            "navigateForward": #selector(navigateForward),
+            "findInPage": #selector(findInPage)
+        ]
+        return actionMap[shortcutId]
     }
     
     @objc private func newTab() {
@@ -79,12 +139,68 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
         NotificationCenter.default.post(name: .closeTab, object: nil)
     }
     
+    @objc private func reopenClosedTab() {
+        NotificationCenter.default.post(name: .reopenClosedTab, object: nil)
+    }
+    
+    @objc private func nextTab() {
+        NotificationCenter.default.post(name: .nextTab, object: nil)
+    }
+    
+    @objc private func previousTab() {
+        NotificationCenter.default.post(name: .previousTab, object: nil)
+    }
+    
+    @objc private func selectTab1() {
+        NotificationCenter.default.post(name: .selectTab1, object: nil)
+    }
+    
+    @objc private func selectTab2() {
+        NotificationCenter.default.post(name: .selectTab2, object: nil)
+    }
+    
+    @objc private func selectTab3() {
+        NotificationCenter.default.post(name: .selectTab3, object: nil)
+    }
+    
+    @objc private func selectTab4() {
+        NotificationCenter.default.post(name: .selectTab4, object: nil)
+    }
+    
+    @objc private func selectTab5() {
+        NotificationCenter.default.post(name: .selectTab5, object: nil)
+    }
+    
+    @objc private func selectTab6() {
+        NotificationCenter.default.post(name: .selectTab6, object: nil)
+    }
+    
+    @objc private func selectTab7() {
+        NotificationCenter.default.post(name: .selectTab7, object: nil)
+    }
+    
+    @objc private func selectTab8() {
+        NotificationCenter.default.post(name: .selectTab8, object: nil)
+    }
+    
+    @objc private func selectTab9() {
+        NotificationCenter.default.post(name: .selectTab9, object: nil)
+    }
+    
     @objc private func reload() {
         NotificationCenter.default.post(name: .reload, object: nil)
     }
     
-    @objc private func focusAddressBar() {
-        NotificationCenter.default.post(name: .focusAddressBar, object: nil)
+    @objc private func navigateBack() {
+        NotificationCenter.default.post(name: .navigateBack, object: nil)
+    }
+    
+    @objc private func navigateForward() {
+        NotificationCenter.default.post(name: .navigateForward, object: nil)
+    }
+    
+    @objc private func findInPage() {
+        NotificationCenter.default.post(name: .findInPage, object: nil)
     }
     
     private func createMainPanel() {

@@ -5,9 +5,9 @@ import Combine
 
 @Observable
 class BrowserViewModel {
-    private let coordinator: BrowserCoordinator
+    let coordinator: BrowserCoordinator
     private let tabService = TabService.shared
-    private var cancellables = Set<AnyCancellable>()
+    var cancellables = Set<AnyCancellable>()
     
     // UI State
     var addressText: String = ""
@@ -59,13 +59,13 @@ class BrowserViewModel {
     // MARK: - Tab Management
     func handleTabSelection(_ tabId: UUID) {
         coordinator.selectTab(withId: tabId)
-        currentWebView = nil
+        // Don't reset currentWebView - it will be updated when the new WebView is created
         updateUIFromCurrentTab()
     }
     
     func handleNewTab() {
         let _ = coordinator.createNewTab()
-        currentWebView = nil
+        // Don't reset currentWebView here - it will be updated when the new WebView is created
         addressText = ""
         updateUIFromCurrentTab()
     }
