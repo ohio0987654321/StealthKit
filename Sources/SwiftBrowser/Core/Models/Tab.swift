@@ -18,7 +18,10 @@ enum SettingsType {
 }
 
 @Observable
-class Tab: Identifiable {
+class Tab: Identifiable, Equatable {
+    static func == (lhs: Tab, rhs: Tab) -> Bool {
+        return lhs.id == rhs.id
+    }
     let id = UUID()
     var title: String = "New Tab"
     var url: URL?

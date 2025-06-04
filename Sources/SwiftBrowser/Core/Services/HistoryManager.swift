@@ -75,7 +75,7 @@ class HistoryManager {
                 )
             }
         } catch {
-            print("Failed to load history: \(error)")
+            // Failed to load history - start with empty array
         }
     }
     
@@ -96,7 +96,7 @@ class HistoryManager {
             let data = try encoder.encode(savedItems)
             userDefaults.set(data, forKey: historyKey)
         } catch {
-            print("Failed to save history: \(error)")
+            // Failed to save history - will retry on next save
         }
     }
 }

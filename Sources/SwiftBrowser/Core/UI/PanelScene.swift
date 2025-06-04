@@ -8,45 +8,23 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     private var isActivationPolicyChangeInProgress = false
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        print("DEBUG: applicationDidFinishLaunching started")
-        
         // Set up menu bar
-        print("DEBUG: Setting up menu bar...")
         setupMenuBar()
-        print("DEBUG: Menu bar setup complete")
-        
-        // Set up WindowService delegate
-        print("DEBUG: Setting up WindowService delegate...")
         WindowService.shared.panelDelegate = self
-        print("DEBUG: WindowService delegate set")
-        
-        // Create the main panel immediately
-        print("DEBUG: About to create main panel...")
         createMainPanel()
-        print("DEBUG: Main panel creation initiated")
         
         // Observe activation policy changes to handle menu conflicts
-        print("DEBUG: Setting up notification observers...")
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleActivationPolicyChange),
             name: NSApplication.didBecomeActiveNotification,
             object: nil
         )
-        print("DEBUG: Notification observers set up")
         
-        print("DEBUG: applicationDidFinishLaunching completed")
-        
-        // Additional safety check to ensure panel exists
+        // Ensure panel is visible after startup
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            if let panel = self.mainPanel {
-                print("DEBUG: Panel verification - panel exists and visible: \(panel.isVisible)")
-                if !panel.isVisible {
-                    print("DEBUG: Panel not visible, forcing it to show...")
-                    panel.makeKeyAndOrderFront(nil)
-                }
-            } else {
-                print("ERROR: No main panel exists after startup!")
+            if let panel = self.mainPanel, !panel.isVisible {
+                panel.makeKeyAndOrderFront(nil)
             }
         }
     }
@@ -107,8 +85,6 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
     }
     
     private func createMainPanel() {
-        print("DEBUG: Starting panel creation...")
-        
         // Determine style mask based on WindowService settings
         let windowService = WindowService.shared
         let styleMask: NSPanel.StyleMask = windowService.isTrafficLightPreventionEnabled ? 
@@ -131,15 +107,11 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
         )
         
         guard let panel = mainPanel else {
-            print("ERROR: Failed to create main panel")
             return
         }
         
-        print("DEBUG: Panel created successfully")
-        
-        // EARLY REGISTRATION: Register immediately to prevent app termination
+        // Register immediately to prevent app termination
         windowService.registerPanel(panel)
-        print("DEBUG: Panel registered with WindowService")
         
         // Configure panel properties
         panel.title = "Swift Browser"
@@ -167,38 +139,26 @@ class PanelAppDelegate: NSObject, NSApplicationDelegate, WindowServicePanelDeleg
             hostingController.view.autoresizingMask = [.width, .height]
         }
         
-        print("DEBUG: Panel content configured")
-        
         // Show the panel and ensure it becomes key
         panel.makeKeyAndOrderFront(nil)
         
-        // Force the panel to become key window to prevent app termination
+        // Ensure panel becomes key window to prevent app termination
         DispatchQueue.main.async {
             panel.makeKey()
-            print("DEBUG: Panel made key window")
         }
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        print("DEBUG: applicationShouldTerminateAfterLastWindowClosed called")
-        print("DEBUG: isPanelRecreationInProgress: \(isPanelRecreationInProgress)")
-        print("DEBUG: isActivationPolicyChangeInProgress: \(isActivationPolicyChangeInProgress)")
-        print("DEBUG: mainPanel exists: \(mainPanel != nil)")
-        print("DEBUG: mainPanel visible: \(mainPanel?.isVisible ?? false)")
-        
         // Never auto-terminate during panel operations
         if isPanelRecreationInProgress || isActivationPolicyChangeInProgress {
-            print("DEBUG: Preventing termination - operations in progress")
             return false
         }
         
         // If main panel still exists and is visible, don't terminate
         if let panel = mainPanel, panel.isVisible {
-            print("DEBUG: Preventing termination - main panel is visible")
             return false
         }
         
-        print("DEBUG: Allowing termination")
         return true
     }
     
