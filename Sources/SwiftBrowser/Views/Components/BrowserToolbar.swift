@@ -66,6 +66,7 @@ struct BrowserDownloadButton: View {
     var body: some View {
         ThemedToolbarButtonWithBadge(
             icon: "arrow.down.circle",
+            isDisabled: !downloadManager.hasDownloadsToShow,
             iconColor: downloadManager.hasActiveDownloads ? .blue : nil,
             badgeCount: downloadManager.activeDownloadCount,
             showBadge: downloadManager.hasActiveDownloads

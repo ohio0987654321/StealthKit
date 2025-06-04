@@ -100,6 +100,10 @@ class DownloadManager: NSObject {
         return activeDownloads.count
     }
     
+    var hasDownloadsToShow: Bool {
+        return !activeDownloads.isEmpty || !recentDownloads.isEmpty
+    }
+    
     // MARK: - Private Helpers
     
     private func removeFromActiveDownloads(_ download: Download) {
