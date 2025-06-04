@@ -60,14 +60,14 @@ struct BrowserAddressField: View {
 }
 
 struct BrowserDownloadButton: View {
+    let onToggleDownloadOverlay: () -> Void
     @State private var downloadManager = DownloadManager.shared
-    @State private var showingDownloadPopover = false
     @State private var isHovered = false
     @State private var isPressed = false
     
     var body: some View {
         Button(action: {
-            showingDownloadPopover.toggle()
+            onToggleDownloadOverlay()
         }) {
             ZStack {
                 Image(systemName: "arrow.down.circle")
@@ -99,12 +99,6 @@ struct BrowserDownloadButton: View {
                     isPressed = false
                 }
         )
-        .popover(isPresented: $showingDownloadPopover, arrowEdge: Edge.bottom) {
-            DownloadPopover()
-                .background(Color(NSColor.controlBackgroundColor))
-                .cornerRadius(UIConstants.CornerRadius.medium)
-                .shadow(radius: 8)
-        }
     }
 }
 

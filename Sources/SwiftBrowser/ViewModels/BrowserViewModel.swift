@@ -14,6 +14,7 @@ class BrowserViewModel {
     var isAddressBarFocused: Bool = false
     var currentWebView: WKWebView?
     var selectedSidebarItem: SidebarItem?
+    var showingDownloadOverlay: Bool = false
     
     // Computed Properties
     var currentTab: Tab? {
@@ -132,5 +133,14 @@ class BrowserViewModel {
     
     func onDisappear() {
         // Cleanup if needed
+    }
+    
+    // MARK: - Download Management
+    func toggleDownloadOverlay() {
+        showingDownloadOverlay.toggle()
+    }
+    
+    func hideDownloadOverlay() {
+        showingDownloadOverlay = false
     }
 }

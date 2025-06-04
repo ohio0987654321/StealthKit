@@ -68,6 +68,43 @@ struct BrowserView: View {
                     } else {
                         WelcomeView()
                     }
+                    
+                    // Download overlay - integrated within the main window
+                    if viewModel.showingDownloadOverlay {
+                        Rectangle()
+                            .fill(Color.clear)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                viewModel.hideDownloadOverlay()
+                            }
+                            .zIndex(999)
+                        
+                        VStack {
+                            HStack {
+                                Spacer()
+                                DownloadPopover()
+                                    .frame(width: UIConstants.DownloadPopover.width)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: UIConstants.CornerRadius.medium)
+                                            .fill(Color(NSColor.controlBackgroundColor))
+                                            .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: UIConstants.CornerRadius.medium)
+                                            .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                                    )
+                                    .padding(.trailing, 16)
+                            }
+                            Spacer()
+                        }
+                        .padding(.top, 8)
+                        .zIndex(1000)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)),
+                            removal: .opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing))
+                        ))
+                        .animation(.easeInOut(duration: AnimationConstants.Timing.medium), value: viewModel.showingDownloadOverlay)
+                    }
                 }
                 .navigationTitle("")
                 .toolbar {
@@ -92,7 +129,7 @@ struct BrowserView: View {
                     }
                     
                     ToolbarItemGroup(placement: .primaryAction) {
-                        BrowserDownloadButton()
+                        BrowserDownloadButton(onToggleDownloadOverlay: viewModel.toggleDownloadOverlay)
                         
                         BrowserNewTabButton {
                             viewModel.handleNewTab()
