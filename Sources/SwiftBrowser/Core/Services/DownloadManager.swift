@@ -7,8 +7,10 @@ class DownloadManager: NSObject {
     
     private var urlSession: URLSession!
     private(set) var activeDownloads: [Download] = []
+    private(set) var recentDownloads: [Download] = []
     private(set) var downloadHistory: [Download] = []
     private var downloadedURLs: Set<URL> = []
+    private var recentDownloadTimers: [UUID: Timer] = [:]
     
     // Simple duplicate prevention
     private let maxConcurrentDownloads = 5
@@ -112,6 +114,37 @@ class DownloadManager: NSObject {
         downloadedURLs.remove(download.url)
     }
     
+    private func moveToRecentDownloads(_ download: Download) {
+        cleanupDownload(download)
+        removeFromActiveDownloads(download)
+        
+        // Add to recent downloads temporarily
+        recentDownloads.append(download)
+        
+        // Set up timer to move to history after delay
+        let delay: TimeInterval = 60.0 // Keep both completed and failed downloads for 60 seconds
+        
+        let timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.moveRecentToHistory(download)
+            }
+        }
+        
+        recentDownloadTimers[download.id] = timer
+    }
+    
+    private func moveRecentToHistory(_ download: Download) {
+        recentDownloads.removeAll { $0.id == download.id }
+        recentDownloadTimers[download.id]?.invalidate()
+        recentDownloadTimers.removeValue(forKey: download.id)
+        addToHistory(download)
+    }
+    
+    func dismissRecentDownload(_ download: Download) {
+        guard recentDownloads.contains(where: { $0.id == download.id }) else { return }
+        moveRecentToHistory(download)
+    }
+    
     private func moveToHistory(_ download: Download) {
         cleanupDownload(download)
         removeFromActiveDownloads(download)
@@ -172,12 +205,12 @@ extension DownloadManager: URLSessionDownloadDelegate {
             DispatchQueue.main.async {
                 download.filename = uniqueFilename
                 download.markCompleted(at: destinationURL)
-                self.moveToHistory(download)
+                self.moveToRecentDownloads(download)
             }
         } catch {
             DispatchQueue.main.async {
                 download.markFailed(with: error)
-                self.moveToHistory(download)
+                self.moveToRecentDownloads(download)
             }
         }
     }
@@ -203,7 +236,7 @@ extension DownloadManager: URLSessionDownloadDelegate {
         if let error = error {
             DispatchQueue.main.async {
                 download.markFailed(with: error)
-                self.moveToHistory(download)
+                self.moveToRecentDownloads(download)
             }
         }
     }

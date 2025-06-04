@@ -28,7 +28,7 @@ class Download: Identifiable {
     let url: URL
     let originalFilename: String
     let mimeType: String?
-    let expectedContentLength: Int64
+    var expectedContentLength: Int64
     
     var filename: String
     var localURL: URL?
@@ -77,6 +77,7 @@ class Download: Identifiable {
         self.downloadedBytes = totalBytesWritten
         if totalBytesExpectedToWrite > 0 && self.expectedContentLength != totalBytesExpectedToWrite {
             // Update expected content length if we get better information
+            self.expectedContentLength = totalBytesExpectedToWrite
         }
     }
     
