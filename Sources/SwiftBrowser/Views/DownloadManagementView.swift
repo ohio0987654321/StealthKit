@@ -135,17 +135,12 @@ struct DownloadHistoryRowView: View {
             // File icon and info
             VStack(alignment: .leading, spacing: UIConstants.Spacing.tiny) {
                 HStack {
-                    Button(action: {
+                    ThemedToolbarButton(
+                        icon: "trash",
+                        iconColor: .red
+                    ) {
                         downloadManager.removeFromHistory(download)
-                    }) {
-                        Image(systemName: "trash")
-                            .foregroundColor(isHovered ? .red.opacity(0.8) : .red)
-                            .font(.system(size: 16))
                     }
-                    .buttonStyle(.plain)
-                    .scaleEffect(isHovered ? 1.1 : 1.0)
-                    .animation(.easeInOut(duration: AnimationConstants.Timing.fast), value: isHovered)
-                    .frame(width: 20)
                     
                     VStack(alignment: .leading, spacing: 2) {
                         Text(download.filename)
@@ -211,7 +206,7 @@ struct DownloadHistoryRowView: View {
                 )
         )
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: AnimationConstants.Timing.fast)) {
+            withAnimation(UITheme.Animation.quick) {
                 isHovered = hovering
             }
         }

@@ -123,11 +123,13 @@ struct ThemedToolbarButton: View {
     let icon: String
     let action: () -> Void
     let isDisabled: Bool
+    let iconColor: Color?
     @State private var isHovered = false
     
-    init(icon: String, isDisabled: Bool = false, action: @escaping () -> Void) {
+    init(icon: String, isDisabled: Bool = false, iconColor: Color? = nil, action: @escaping () -> Void) {
         self.icon = icon
         self.isDisabled = isDisabled
+        self.iconColor = iconColor
         self.action = action
     }
     
@@ -135,20 +137,153 @@ struct ThemedToolbarButton: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(UITheme.Typography.toolbarButton)
-                .foregroundStyle(UITheme.Colors.primary)
+                .foregroundStyle(iconColor ?? (isDisabled ? UITheme.Colors.tertiary : UITheme.Colors.primary))
+                .frame(width: 28, height: 28)
+                .background(
+                    RoundedRectangle(cornerRadius: UITheme.CornerRadius.button)
+                        .fill(backgroundFill)
+                )
+                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ThemedToolbarButtonStyle(isHovered: isHovered))
         .disabled(isDisabled)
-        .frame(width: 28, height: 28)
-        .background(
-            RoundedRectangle(cornerRadius: UITheme.CornerRadius.button)
-                .fill(isHovered ? Color.white.opacity(0.15) : Color.clear)
-        )
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: AnimationConstants.Timing.fast)) {
+            withAnimation(UITheme.Animation.quick) {
                 isHovered = hovering && !isDisabled
             }
         }
+    }
+    
+    private var backgroundFill: Color {
+        if isDisabled {
+            return Color.clear
+        } else if isHovered {
+            return UITheme.Colors.hover
+        } else {
+            return Color.clear
+        }
+    }
+}
+
+struct ThemedToolbarButtonStyle: ButtonStyle {
+    let isHovered: Bool
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .background(
+                RoundedRectangle(cornerRadius: UITheme.CornerRadius.button)
+                    .fill(configuration.isPressed ? UITheme.Colors.pressed : Color.clear)
+            )
+            .animation(UITheme.Animation.quick, value: configuration.isPressed)
+    }
+}
+
+struct ThemedToolbarButtonWithBadge: View {
+    let icon: String
+    let action: () -> Void
+    let isDisabled: Bool
+    let iconColor: Color?
+    let badgeCount: Int
+    let showBadge: Bool
+    @State private var isHovered = false
+    
+    init(icon: String, isDisabled: Bool = false, iconColor: Color? = nil, badgeCount: Int = 0, showBadge: Bool = false, action: @escaping () -> Void) {
+        self.icon = icon
+        self.isDisabled = isDisabled
+        self.iconColor = iconColor
+        self.badgeCount = badgeCount
+        self.showBadge = showBadge
+        self.action = action
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                Image(systemName: icon)
+                    .font(UITheme.Typography.toolbarButton)
+                    .foregroundStyle(iconColor ?? (isDisabled ? UITheme.Colors.tertiary : UITheme.Colors.primary))
+                
+                if showBadge {
+                    Text("\(badgeCount)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(2)
+                        .background(Circle().fill(Color.red))
+                        .offset(x: 8, y: -8)
+                }
+            }
+            .frame(width: 28, height: 28)
+            .background(
+                RoundedRectangle(cornerRadius: UITheme.CornerRadius.button)
+                    .fill(backgroundFill)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(ThemedToolbarButtonStyle(isHovered: isHovered))
+        .disabled(isDisabled)
+        .onHover { hovering in
+            withAnimation(UITheme.Animation.quick) {
+                isHovered = hovering && !isDisabled
+            }
+        }
+    }
+    
+    private var backgroundFill: Color {
+        if isDisabled {
+            return Color.clear
+        } else if isHovered {
+            return UITheme.Colors.hover
+        } else {
+            return Color.clear
+        }
+    }
+}
+
+struct ThemedCloseButton: View {
+    let action: () -> Void
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "xmark")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+                .frame(width: 18, height: 18)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(backgroundFill)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(ThemedCloseButtonStyle(isHovered: isHovered))
+        .onHover { hovering in
+            withAnimation(UITheme.Animation.quick) {
+                isHovered = hovering
+            }
+        }
+    }
+    
+    private var backgroundFill: Color {
+        if isHovered {
+            return Color.white.opacity(0.2)
+        } else {
+            return Color.clear
+        }
+    }
+}
+
+struct ThemedCloseButtonStyle: ButtonStyle {
+    let isHovered: Bool
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(configuration.isPressed ? Color.white.opacity(0.3) : Color.clear)
+            )
+            .animation(UITheme.Animation.quick, value: configuration.isPressed)
     }
 }
 

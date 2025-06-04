@@ -150,47 +150,53 @@ struct DownloadRowView: View {
                 HStack(spacing: UIConstants.Spacing.small) {
                     // Active download controls
                     if download.state == .downloading {
-                        Button(action: { downloadManager.pauseDownload(download) }) {
-                            Image(systemName: "pause.fill")
-                                .foregroundColor(.blue)
+                        ThemedToolbarButton(
+                            icon: "pause.fill",
+                            iconColor: .blue
+                        ) {
+                            downloadManager.pauseDownload(download)
                         }
-                        .buttonStyle(.plain)
                     } else if download.state == .paused {
-                        Button(action: { downloadManager.resumeDownload(download) }) {
-                            Image(systemName: "play.fill")
-                                .foregroundColor(.blue)
+                        ThemedToolbarButton(
+                            icon: "play.fill",
+                            iconColor: .blue
+                        ) {
+                            downloadManager.resumeDownload(download)
                         }
-                        .buttonStyle(.plain)
                     }
                     
                     // Actions for completed downloads
                     if download.state == .completed {
-                        Button(action: { downloadManager.openFile(download) }) {
-                            Image(systemName: "doc.text.fill")
-                                .foregroundColor(.blue)
+                        ThemedToolbarButton(
+                            icon: "doc.text.fill",
+                            iconColor: .blue
+                        ) {
+                            downloadManager.openFile(download)
                         }
-                        .buttonStyle(.plain)
                         
-                        Button(action: { downloadManager.openInFinder(download) }) {
-                            Image(systemName: "folder.fill")
-                                .foregroundColor(.blue)
+                        ThemedToolbarButton(
+                            icon: "folder.fill",
+                            iconColor: .blue
+                        ) {
+                            downloadManager.openInFinder(download)
                         }
-                        .buttonStyle(.plain)
                     }
                     
                     // Dismiss/Cancel button
                     if download.state.isActive {
-                        Button(action: { downloadManager.cancelDownload(download) }) {
-                            Image(systemName: "xmark")
-                                .foregroundColor(.red)
+                        ThemedToolbarButton(
+                            icon: "xmark",
+                            iconColor: .red
+                        ) {
+                            downloadManager.cancelDownload(download)
                         }
-                        .buttonStyle(.plain)
                     } else {
-                        Button(action: { downloadManager.dismissRecentDownload(download) }) {
-                            Image(systemName: "xmark")
-                                .foregroundColor(.secondary)
+                        ThemedToolbarButton(
+                            icon: "xmark",
+                            iconColor: .secondary
+                        ) {
+                            downloadManager.dismissRecentDownload(download)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }

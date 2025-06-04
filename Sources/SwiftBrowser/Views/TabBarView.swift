@@ -36,7 +36,6 @@ struct TabItemView: View {
     let onSelect: () -> Void
     let onClose: () -> Void
     @State private var isHovered = false
-    @State private var isCloseHovered = false
     
     var body: some View {
         HStack(spacing: 6) {
@@ -62,21 +61,8 @@ struct TabItemView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             if isHovered || isSelected {
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-                .frame(width: 18, height: 18)
-                .background(
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(isCloseHovered ? Color.white.opacity(0.2) : Color.clear)
-                )
-                .onHover { hovering in
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        isCloseHovered = hovering
-                    }
+                ThemedCloseButton {
+                    onClose()
                 }
             }
         }
@@ -95,7 +81,7 @@ struct TabItemView: View {
         .contentShape(Rectangle())
         .onTapGesture { onSelect() }
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation(UITheme.Animation.quick) {
                 isHovered = hovering
             }
         }

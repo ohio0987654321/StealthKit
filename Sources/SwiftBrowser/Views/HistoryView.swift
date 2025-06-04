@@ -286,11 +286,12 @@ struct HistoryItemRow: View {
     var body: some View {
         HStack(spacing: 12) {
             // Checkbox
-            Button(action: onToggleSelection) {
-                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
-                    .foregroundColor(isSelected ? .blue : .secondary)
+            ThemedToolbarButton(
+                icon: isSelected ? "checkmark.square.fill" : "square",
+                iconColor: isSelected ? .blue : .secondary
+            ) {
+                onToggleSelection()
             }
-            .buttonStyle(PlainButtonStyle())
             
             // Favicon
             FaviconView(faviconData: item.faviconData, url: item.url)

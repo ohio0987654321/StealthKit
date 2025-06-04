@@ -257,11 +257,12 @@ struct DomainRowView: View {
             Spacer()
             
             if isHovered {
-                Button(action: onDelete) {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
+                ThemedToolbarButton(
+                    icon: "trash",
+                    iconColor: .red
+                ) {
+                    onDelete()
                 }
-                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(.vertical, 4)
@@ -299,11 +300,12 @@ struct CookieRowView: View {
                 
                 Spacer()
                 
-                Button(action: { isExpanded.toggle() }) {
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundColor(.secondary)
+                ThemedToolbarButton(
+                    icon: isExpanded ? "chevron.up" : "chevron.down",
+                    iconColor: .secondary
+                ) {
+                    isExpanded.toggle()
                 }
-                .buttonStyle(PlainButtonStyle())
             }
             
             if isExpanded {

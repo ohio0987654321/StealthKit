@@ -15,9 +15,9 @@ struct UITheme {
         static let backgroundSecondary = Color(.controlBackgroundColor)
         static let backgroundTertiary = Color(.quaternarySystemFill)
         
-        static let hover = Color.accentColor.opacity(0.05)
+        static let hover = Color.white.opacity(0.15)
         static let selected = Color.accentColor.opacity(0.15)
-        static let pressed = Color.accentColor.opacity(0.25)
+        static let pressed = Color.white.opacity(0.3)
         
         static let separator = Color(.separatorColor)
         static let border = Color(.separatorColor).opacity(0.3)

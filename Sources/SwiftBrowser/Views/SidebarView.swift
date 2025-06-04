@@ -137,7 +137,7 @@ struct SidebarRowView: View {
             onSelect()
         }
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation(UITheme.Animation.quick) {
                 isHovered = hovering
             }
         }
