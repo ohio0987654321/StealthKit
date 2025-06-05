@@ -29,7 +29,7 @@ all: build
 build:
 	@echo "$(YELLOW)Building $(PROJECT_NAME)...$(NC)"
 	@mkdir -p $(BUILD_DIR)
-	@swift build -c release --build-path $(BUILD_DIR)
+	@swift build -c release -Xswiftc -whole-module-optimization --build-path $(BUILD_DIR)
 	@echo "$(YELLOW)Creating app bundle...$(NC)"
 	@$(MAKE) create-bundle
 	@echo "$(GREEN)Build complete: $(APP_BUNDLE)$(NC)"
