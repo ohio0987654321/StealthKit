@@ -82,6 +82,7 @@ class ScreenshotService {
     
     // MARK: - Permission Handling
     
+    @discardableResult
     func checkScreenRecordingPermission() -> Bool {
         // Create a small test image to check if we have permission
         let testRect = CGRect(x: 0, y: 0, width: 1, height: 1)
@@ -92,7 +93,7 @@ class ScreenshotService {
     func requestScreenRecordingPermission() {
         // On macOS, we need to trigger a permission request by attempting to capture
         // This will show the system permission dialog
-        _ = checkScreenRecordingPermission()
+        checkScreenRecordingPermission()
     }
     
     // MARK: - Filename Generation
@@ -171,8 +172,8 @@ class ScreenshotService {
     
     private func generateThumbnail(for windowInfo: WindowInfo) async -> NSImage? {
         return await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let thumbnail = self.captureThumbnail(for: windowInfo)
+            Task {
+                let thumbnail = captureThumbnail(for: windowInfo)
                 continuation.resume(returning: thumbnail)
             }
         }

@@ -80,7 +80,7 @@ class CookieManager {
             }
         }
         
-        _ = self.cookiesByDomain.removeValue(forKey: domain)
+        self.cookiesByDomain.removeValue(forKey: domain)
     }
     
     func getAllDomains() -> [String] {

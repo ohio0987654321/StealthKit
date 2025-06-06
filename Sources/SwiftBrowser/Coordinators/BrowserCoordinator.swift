@@ -41,7 +41,7 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
             }
         } else if let url = url {
             // Create new tab
-            let newTab = tabService.createTab(with: url)
+            tabService.createTab(with: url)
             selectedSidebarItem = nil
             currentWebView = nil
         }

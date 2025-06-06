@@ -1,14 +1,14 @@
 import Foundation
 import AppKit
 
-struct WindowInfo: Identifiable {
+struct WindowInfo: Identifiable, Sendable {
     let id: CGWindowID
     let title: String
     let ownerName: String
     let bounds: CGRect
     let isOnScreen: Bool
     let windowLayer: Int
-    var thumbnailImage: NSImage?
+    nonisolated(unsafe) var thumbnailImage: NSImage?
     
     init?(from windowDict: [String: Any]) {
         guard let windowID = windowDict[kCGWindowNumber as String] as? CGWindowID,

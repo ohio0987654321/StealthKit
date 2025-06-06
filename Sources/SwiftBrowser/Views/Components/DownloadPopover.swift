@@ -247,7 +247,6 @@ struct DownloadRowView: View {
         
         let fileTypeService = FileTypeService.shared
         let specificUTI = fileTypeService.getUTI(for: localURL)
-        let mimeType = fileTypeService.getMIMEType(for: localURL)
         
         // 1. Register file representation with specific UTI (primary)
         itemProvider.registerFileRepresentation(
@@ -274,8 +273,10 @@ struct DownloadRowView: View {
             forTypeIdentifier: "public.file-url",
             visibility: .all
         ) { completion in
-            let urlData = localURL.absoluteString.data(using: .utf8) ?? Data()
-            completion(urlData, nil)
+            Task { @MainActor in
+                let urlData = localURL.absoluteString.data(using: .utf8) ?? Data()
+                completion(urlData, nil)
+            }
             return nil
         }
         
@@ -284,8 +285,10 @@ struct DownloadRowView: View {
             forTypeIdentifier: "public.url",
             visibility: .all
         ) { completion in
-            let urlData = localURL.absoluteString.data(using: .utf8) ?? Data()
-            completion(urlData, nil)
+            Task { @MainActor in
+                let urlData = localURL.absoluteString.data(using: .utf8) ?? Data()
+                completion(urlData, nil)
+            }
             return nil
         }
         
@@ -295,11 +298,13 @@ struct DownloadRowView: View {
                 forTypeIdentifier: specificUTI,
                 visibility: .all
             ) { completion in
-                do {
-                    let fileData = try Data(contentsOf: localURL)
-                    completion(fileData, nil)
-                } catch {
-                    completion(nil, error)
+                Task { @MainActor in
+                    do {
+                        let fileData = try Data(contentsOf: localURL)
+                        completion(fileData, nil)
+                    } catch {
+                        completion(nil, error)
+                    }
                 }
                 return nil
             }

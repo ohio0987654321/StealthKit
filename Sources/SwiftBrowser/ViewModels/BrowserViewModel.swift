@@ -64,7 +64,7 @@ class BrowserViewModel {
     }
     
     func handleNewTab() {
-        let _ = coordinator.createNewTab()
+        coordinator.createNewTab()
         // Don't reset currentWebView here - it will be updated when the new WebView is created
         addressText = ""
         updateUIFromCurrentTab()
