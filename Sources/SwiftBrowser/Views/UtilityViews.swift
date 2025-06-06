@@ -1,6 +1,15 @@
 import SwiftUI
 import AppKit
 
+// MARK: - Simple Utility Views
+
+struct EmptyTabView: View {
+    var body: some View {
+        Color.clear
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
 struct FaviconView: View {
     let faviconData: String?
     let url: URL

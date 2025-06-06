@@ -15,10 +15,8 @@ struct BrowserView: View {
     var body: some View {
         NavigationSplitView {
             HierarchicalSidebarView(
-                tabs: viewModel.tabs,
                 selectedItem: $viewModel.selectedSidebarItem,
-                onSelectionChange: viewModel.handleSidebarSelection,
-                onCloseTab: viewModel.handleCloseTab
+                onSelectionChange: viewModel.handleSidebarSelection
             )
             .navigationSplitViewColumnWidth(min: UIConstants.Sidebar.minWidth, ideal: UIConstants.Sidebar.idealWidth, max: UIConstants.Sidebar.maxWidth)
         } detail: {

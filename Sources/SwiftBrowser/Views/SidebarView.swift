@@ -7,14 +7,11 @@ enum SidebarItem: Hashable {
     case settingsHistory
     case settingsCookies
     case settingsDownloads
-    case tab(UUID)
 }
 
 struct HierarchicalSidebarView: View {
-    let tabs: [Tab]
     @Binding var selectedItem: SidebarItem?
     let onSelectionChange: (SidebarItem) -> Void
-    let onCloseTab: (Tab) -> Void
     
     var body: some View {
         ScrollView {

@@ -26,13 +26,13 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
                 // Convert empty tab to web tab
                 let newWebTab = Tab(url: url)
                 tabService.replaceCurrentTab(with: newWebTab)
-                selectedSidebarItem = .tab(newWebTab.id)
+                selectedSidebarItem = nil
                 currentWebView = nil
             } else if case .settings = currentTab.tabType {
                 // Convert settings tab to web tab
                 let newWebTab = Tab(url: url)
                 tabService.replaceCurrentTab(with: newWebTab)
-                selectedSidebarItem = .tab(newWebTab.id)
+                selectedSidebarItem = nil
                 currentWebView = nil
             } else if let url = url {
                 // Navigate current web tab
@@ -42,7 +42,7 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
         } else if let url = url {
             // Create new tab
             let newTab = tabService.createTab(with: url)
-            selectedSidebarItem = .tab(newTab.id)
+            selectedSidebarItem = nil
             currentWebView = nil
         }
     }
@@ -80,7 +80,7 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     @discardableResult
     func createNewTab() -> UUID {
         let newTab = tabService.createTab()
-        selectedSidebarItem = .tab(newTab.id)
+        selectedSidebarItem = nil
         currentWebView = nil
         return newTab.id
     }
@@ -146,7 +146,7 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
         // Restore the original title
         newTab.title = lastClosedTab.title
         
-        selectedSidebarItem = .tab(newTab.id)
+        selectedSidebarItem = nil
         currentWebView = nil
     }
     
@@ -204,14 +204,36 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
             navigateToSettings(.cookies)
         case .settingsDownloads:
             navigateToSettings(.downloads)
-        case .tab(let tabId):
-            selectTab(withId: tabId)
         }
     }
     
     private func updateSelectedSidebarItem() {
+        // Sidebar only tracks settings now, not tabs
+        // Clear selection when switching to web content
         if let currentTab = tabService.currentTab {
-            selectedSidebarItem = .tab(currentTab.id)
+            switch currentTab.tabType {
+            case .settings(let settingsType):
+                // Keep settings selection when showing settings
+                switch settingsType {
+                case .browserUtilities:
+                    selectedSidebarItem = .settingsBrowserUtilities
+                case .windowUtilities:
+                    selectedSidebarItem = .settingsWindowUtilities
+                case .securityPrivacy:
+                    selectedSidebarItem = .settingsSecurityPrivacy
+                case .history:
+                    selectedSidebarItem = .settingsHistory
+                case .cookies:
+                    selectedSidebarItem = .settingsCookies
+                case .downloads:
+                    selectedSidebarItem = .settingsDownloads
+                case .welcome:
+                    selectedSidebarItem = nil
+                }
+            case .web, .empty:
+                // Clear sidebar selection for web content
+                selectedSidebarItem = nil
+            }
         }
     }
     
