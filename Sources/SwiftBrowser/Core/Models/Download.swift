@@ -52,7 +52,15 @@ class Download: Identifiable {
     
     var progress: Double {
         guard expectedContentLength > 0 else { return 0.0 }
-        return Double(downloadedBytes) / Double(expectedContentLength)
+        return min(1.0, Double(downloadedBytes) / Double(expectedContentLength))
+    }
+    
+    var hasKnownSize: Bool {
+        return expectedContentLength > 0
+    }
+    
+    var isIndeterminate: Bool {
+        return !hasKnownSize && state == .downloading
     }
     
     var formattedFileSize: String {

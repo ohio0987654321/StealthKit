@@ -203,9 +203,15 @@ struct DownloadRowView: View {
             }
             
             if download.state == .downloading || download.state == .paused {
-                ProgressView(value: download.progress)
-                    .progressViewStyle(LinearProgressViewStyle())
-                    .scaleEffect(y: 0.8)
+                if download.isIndeterminate {
+                    ProgressView()
+                        .progressViewStyle(LinearProgressViewStyle())
+                        .scaleEffect(y: 0.8)
+                } else {
+                    ProgressView(value: download.progress)
+                        .progressViewStyle(LinearProgressViewStyle())
+                        .scaleEffect(y: 0.8)
+                }
             }
         }
         .padding(UIConstants.Spacing.small)

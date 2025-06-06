@@ -138,7 +138,7 @@ class DownloadManager: NSObject {
     private func moveToRecentDownloads(_ download: Download) {
         removeFromActiveDownloads(download)
         
-        // Add to history immediately (Fix Bug 1)
+        // Add to history immediately
         addToHistory(download)
         
         // Add to recent downloads temporarily for popup UI
@@ -160,7 +160,7 @@ class DownloadManager: NSObject {
         recentDownloads.removeAll { $0.id == download.id }
         recentDownloadTimers[download.id]?.invalidate()
         recentDownloadTimers.removeValue(forKey: download.id)
-        // Only clean up URL now when fully removing from recent (Fix Bug 2)
+        // Only clean up URL when fully removing from recent downloads (Fix Bug 1)
         cleanupDownload(download)
     }
     
@@ -174,12 +174,6 @@ class DownloadManager: NSObject {
     func dismissRecentDownload(_ download: Download) {
         guard recentDownloads.contains(where: { $0.id == download.id }) else { return }
         removeFromRecentDownloads(download)
-    }
-    
-    private func moveToHistory(_ download: Download) {
-        cleanupDownload(download)
-        removeFromActiveDownloads(download)
-        addToHistory(download)
     }
     
     private func getDownloadsDirectory() -> URL {
