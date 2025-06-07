@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 import AppKit
 
 struct HistoryView: View {
-    @State private var historyManager = HistoryManager.shared
+    @State private var stateManager = BrowserStateManager.shared
     @State private var searchText = ""
     @State private var selectedTimeRange: TimeRange = .all
     @State private var selectedItems: Set<UUID> = []
@@ -27,7 +27,7 @@ struct HistoryView: View {
     }
     
     var filteredHistory: [HistoryItem] {
-        let searchResults = historyManager.searchHistory(query: searchText)
+        let searchResults = stateManager.searchHistory(query: searchText)
         let timeFiltered = filterByTimeRange(searchResults)
         return sortHistory(timeFiltered)
     }
@@ -152,7 +152,7 @@ struct HistoryView: View {
         .alert("Clear All History", isPresented: $showingClearAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Clear All", role: .destructive) {
-                historyManager.clearHistory()
+                stateManager.clearHistory()
                 selectedItems.removeAll()
             }
         } message: {
@@ -230,7 +230,7 @@ struct HistoryView: View {
     
     private func deleteSelectedItems() {
         for itemId in selectedItems {
-            HistoryManager.shared.removeHistoryItem(withId: itemId)
+            stateManager.removeHistoryItem(withId: itemId)
         }
         selectedItems.removeAll()
     }
@@ -343,7 +343,7 @@ struct HistoryItemRow: View {
             Divider()
             
             Button("Delete", role: .destructive) {
-                HistoryManager.shared.removeHistoryItem(withId: item.id)
+                BrowserStateManager.shared.removeHistoryItem(withId: item.id)
             }
         }
     }

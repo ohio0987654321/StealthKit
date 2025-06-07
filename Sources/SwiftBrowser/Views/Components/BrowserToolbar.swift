@@ -61,15 +61,15 @@ struct BrowserAddressField: View {
 
 struct BrowserDownloadButton: View {
     let onToggleDownloadOverlay: () -> Void
-    @State private var downloadManager = DownloadManager.shared
+    @State private var fileManager = BrowserFileManager.shared
     
     var body: some View {
         ThemedToolbarButtonWithBadge(
             icon: "arrow.down.circle",
-            isDisabled: !downloadManager.hasDownloadsToShow,
-            iconColor: downloadManager.hasActiveDownloads ? .blue : nil,
-            badgeCount: downloadManager.activeDownloadCount,
-            showBadge: downloadManager.hasActiveDownloads
+            isDisabled: !fileManager.hasDownloadsToShow,
+            iconColor: fileManager.hasActiveDownloads ? .blue : nil,
+            badgeCount: fileManager.activeDownloadCount,
+            showBadge: fileManager.hasActiveDownloads
         ) {
             onToggleDownloadOverlay()
         }
@@ -90,7 +90,7 @@ struct BrowserNewTabButton: View {
 
 struct ScreenshotToolbarButton: View {
     let onToggleScreenshotPopover: () -> Void
-    @State private var screenshotService = ScreenshotService.shared
+    @State private var fileManager = BrowserFileManager.shared
     
     var body: some View {
         ThemedToolbarButton(

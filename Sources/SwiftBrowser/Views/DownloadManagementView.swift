@@ -2,16 +2,16 @@ import SwiftUI
 import AppKit
 
 struct DownloadManagementView: View {
-    @State private var downloadManager = DownloadManager.shared
+    @State private var fileManager = BrowserFileManager.shared
     @State private var searchText = ""
     @State private var selectedDownloads = Set<Download.ID>()
     @State private var showingDeleteAlert = false
     
     var filteredDownloads: [Download] {
         if searchText.isEmpty {
-            return downloadManager.downloadHistory
+            return fileManager.downloadHistory
         } else {
-            return downloadManager.downloadHistory.filter { download in
+            return fileManager.downloadHistory.filter { download in
                 download.filename.localizedCaseInsensitiveContains(searchText) ||
                 download.url.absoluteString.localizedCaseInsensitiveContains(searchText)
             }
@@ -29,7 +29,7 @@ struct DownloadManagementView: View {
                     
                     Spacer()
                     
-                    if !downloadManager.downloadHistory.isEmpty {
+                    if !fileManager.downloadHistory.isEmpty {
                         Button("Clear All") {
                             showingDeleteAlert = true
                         }
@@ -73,7 +73,7 @@ struct DownloadManagementView: View {
         .alert("Clear Download History", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Clear All", role: .destructive) {
-                downloadManager.clearHistory()
+                fileManager.clearHistory()
             }
         } message: {
             Text("This will permanently remove all download history. This action cannot be undone.")
@@ -111,7 +111,7 @@ struct EmptyDownloadHistoryView: View {
 struct DownloadHistoryListView: View {
     let downloads: [Download]
     @Binding var selectedDownloads: Set<Download.ID>
-    @State private var downloadManager = DownloadManager.shared
+    @State private var fileManager = BrowserFileManager.shared
     
     var body: some View {
         ScrollView {
@@ -127,7 +127,7 @@ struct DownloadHistoryListView: View {
 
 struct DownloadHistoryRowView: View {
     let download: Download
-    @State private var downloadManager = DownloadManager.shared
+    @State private var fileManager = BrowserFileManager.shared
     @State private var isHovered = false
     
     var body: some View {
@@ -139,7 +139,7 @@ struct DownloadHistoryRowView: View {
                         icon: "trash",
                         iconColor: .red
                     ) {
-                        downloadManager.removeFromHistory(download)
+                        fileManager.removeFromHistory(download)
                     }
                     
                     VStack(alignment: .leading, spacing: 2) {
@@ -180,13 +180,13 @@ struct DownloadHistoryRowView: View {
                         HStack(spacing: UIConstants.Spacing.small) {
                             if download.state == .completed {
                                 Button("Open") {
-                                    downloadManager.openFile(download)
+                                    fileManager.openFile(download)
                                 }
                                 .buttonStyle(.borderless)
                                 .font(UITheme.Typography.caption)
                                 
                                 Button("Show in Finder") {
-                                    downloadManager.openInFinder(download)
+                                    fileManager.openInFinder(download)
                                 }
                                 .buttonStyle(.borderless)
                                 .font(UITheme.Typography.caption)

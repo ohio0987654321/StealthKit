@@ -2,7 +2,7 @@ import SwiftUI
 import WebKit
 
 struct CookieManagementView: View {
-    @State private var cookieManager = CookieManager.shared
+    @State private var stateManager = BrowserStateManager.shared
     @State private var selectedDomain: String? = nil
     @State private var searchText = ""
     @State private var showingClearAlert = false
@@ -16,7 +16,7 @@ struct CookieManagementView: View {
     }
     
     var filteredDomains: [String] {
-        let domains = Array(cookieManager.cookiesByDomain.keys)
+        let domains = Array(stateManager.cookiesByDomain.keys)
         let filtered = searchText.isEmpty ? domains : domains.filter { domain in
             domain.localizedCaseInsensitiveContains(searchText)
         }
@@ -26,7 +26,7 @@ struct CookieManagementView: View {
     
     var selectedDomainCookies: [CookieItem] {
         guard let domain = selectedDomain else { return [] }
-        return cookieManager.cookiesByDomain[domain] ?? []
+        return stateManager.cookiesByDomain[domain] ?? []
     }
     
     var body: some View {
@@ -59,7 +59,7 @@ struct CookieManagementView: View {
                     // Action buttons
                     HStack {
                         Button("Refresh Cookies") {
-                            cookieManager.refreshCookies()
+                            stateManager.refreshCookies()
                         }
                         .buttonStyle(.bordered)
                         
@@ -99,7 +99,7 @@ struct CookieManagementView: View {
                     List(filteredDomains, id: \.self, selection: $selectedDomain) { domain in
                         DomainRowView(
                             domain: domain,
-                            cookieCount: cookieManager.cookiesByDomain[domain]?.count ?? 0,
+                            cookieCount: stateManager.cookiesByDomain[domain]?.count ?? 0,
                             isSelected: selectedDomain == domain,
                             onDelete: { deleteDomainCookies(domain) }
                         )
@@ -184,7 +184,7 @@ struct CookieManagementView: View {
         .alert("Clear All Cookies", isPresented: $showingClearAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Clear All", role: .destructive) {
-                cookieManager.deleteAllCookies()
+                stateManager.deleteAllCookies()
                 selectedDomain = nil
             }
         } message: {
@@ -194,8 +194,8 @@ struct CookieManagementView: View {
             Button("Cancel", role: .cancel) { }
             Button("Clear", role: .destructive) {
                 if let domain = selectedDomain {
-                    cookieManager.deleteCookies(for: domain)
-                    if cookieManager.cookiesByDomain[domain]?.isEmpty == true || cookieManager.cookiesByDomain[domain] == nil {
+                    stateManager.deleteCookies(for: domain)
+                    if stateManager.cookiesByDomain[domain]?.isEmpty == true || stateManager.cookiesByDomain[domain] == nil {
                         selectedDomain = nil
                     }
                 }
@@ -204,7 +204,7 @@ struct CookieManagementView: View {
             Text("This will permanently delete all cookies for \(selectedDomain ?? "this domain"). This action cannot be undone.")
         }
         .onAppear {
-            cookieManager.refreshCookies()
+            stateManager.refreshCookies()
         }
     }
     
@@ -214,21 +214,21 @@ struct CookieManagementView: View {
             return domains.sorted()
         case .mostCookies:
             return domains.sorted { domain1, domain2 in
-                let count1 = cookieManager.cookiesByDomain[domain1]?.count ?? 0
-                let count2 = cookieManager.cookiesByDomain[domain2]?.count ?? 0
+                let count1 = stateManager.cookiesByDomain[domain1]?.count ?? 0
+                let count2 = stateManager.cookiesByDomain[domain2]?.count ?? 0
                 return count1 > count2
             }
         case .latest:
             return domains.sorted { domain1, domain2 in
-                let latestDate1 = cookieManager.cookiesByDomain[domain1]?.compactMap { $0.expiresDate }.max() ?? Date.distantPast
-                let latestDate2 = cookieManager.cookiesByDomain[domain2]?.compactMap { $0.expiresDate }.max() ?? Date.distantPast
+                let latestDate1 = stateManager.cookiesByDomain[domain1]?.compactMap { $0.expiresDate }.max() ?? Date.distantPast
+                let latestDate2 = stateManager.cookiesByDomain[domain2]?.compactMap { $0.expiresDate }.max() ?? Date.distantPast
                 return latestDate1 > latestDate2
             }
         }
     }
     
     private func deleteDomainCookies(_ domain: String) {
-        cookieManager.deleteCookies(for: domain)
+        stateManager.deleteCookies(for: domain)
         if selectedDomain == domain {
             selectedDomain = nil
         }

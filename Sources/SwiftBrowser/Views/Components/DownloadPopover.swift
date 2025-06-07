@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct DownloadPopover: View {
-    @State private var downloadManager = DownloadManager.shared
+    @State private var fileManager = BrowserFileManager.shared
     
     var allDownloads: [Download] {
-        return downloadManager.activeDownloads + downloadManager.recentDownloads
+        return fileManager.activeDownloads + fileManager.recentDownloads
     }
     
     var body: some View {
@@ -85,7 +85,7 @@ struct ActiveDownloadsView: View {
 
 struct DownloadRowView: View {
     let download: Download
-    @State private var downloadManager = DownloadManager.shared
+    @State private var fileManager = BrowserFileManager.shared
     @State private var isDragging = false
     
     private var statusText: String {
@@ -155,14 +155,14 @@ struct DownloadRowView: View {
                             icon: "pause.fill",
                             iconColor: .blue
                         ) {
-                            downloadManager.pauseDownload(download)
+                            fileManager.pauseDownload(download)
                         }
                     } else if download.state == .paused {
                         ThemedToolbarButton(
                             icon: "play.fill",
                             iconColor: .blue
                         ) {
-                            downloadManager.resumeDownload(download)
+                            fileManager.resumeDownload(download)
                         }
                     }
                     
@@ -172,14 +172,14 @@ struct DownloadRowView: View {
                             icon: "doc.text.fill",
                             iconColor: .blue
                         ) {
-                            downloadManager.openFile(download)
+                            fileManager.openFile(download)
                         }
                         
                         ThemedToolbarButton(
                             icon: "folder.fill",
                             iconColor: .blue
                         ) {
-                            downloadManager.openInFinder(download)
+                            fileManager.openInFinder(download)
                         }
                     }
                     
@@ -189,14 +189,14 @@ struct DownloadRowView: View {
                             icon: "xmark",
                             iconColor: .red
                         ) {
-                            downloadManager.cancelDownload(download)
+                            fileManager.cancelDownload(download)
                         }
                     } else {
                         ThemedToolbarButton(
                             icon: "xmark",
                             iconColor: .secondary
                         ) {
-                            downloadManager.dismissRecentDownload(download)
+                            fileManager.dismissRecentDownload(download)
                         }
                     }
                 }
@@ -245,8 +245,7 @@ struct DownloadRowView: View {
             return itemProvider
         }
         
-        let fileTypeService = FileTypeService.shared
-        let specificUTI = fileTypeService.getUTI(for: localURL)
+        let specificUTI = fileManager.getUTI(for: localURL)
         
         // 1. Register file representation with specific UTI (primary)
         itemProvider.registerFileRepresentation(

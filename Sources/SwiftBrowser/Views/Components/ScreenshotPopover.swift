@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct ScreenshotPopover: View {
-    @State private var screenshotService = ScreenshotService.shared
-    @State private var downloadManager = DownloadManager.shared
+    @State private var fileManager = BrowserFileManager.shared
     @State private var availableWindows: [WindowInfo] = []
     @State private var selectedWindow: WindowInfo?
     @State private var isCapturing = false
@@ -64,7 +63,7 @@ struct ScreenshotPopover: View {
         isLoadingThumbnails = true
         
         Task {
-            let windowsWithThumbnails = await screenshotService.getAvailableWindowsWithThumbnails()
+            let windowsWithThumbnails = await fileManager.getAvailableWindowsWithThumbnails()
             
             await MainActor.run {
                 availableWindows = windowsWithThumbnails
@@ -81,7 +80,7 @@ struct ScreenshotPopover: View {
         errorMessage = nil
         
         DispatchQueue.global(qos: .userInitiated).async {
-            let result = screenshotService.captureWindow(window)
+            let result = fileManager.captureWindow(window)
             
             DispatchQueue.main.async {
                 isCapturing = false
@@ -97,7 +96,7 @@ struct ScreenshotPopover: View {
     }
     
     private func saveScreenshot(imageData: Data, windowInfo: WindowInfo) {
-        let filename = screenshotService.generateScreenshotFilename(for: windowInfo)
+        let filename = fileManager.generateScreenshotFilename(for: windowInfo)
         let downloadsDirectory = getDownloadsDirectory()
         let fileURL = downloadsDirectory.appendingPathComponent(filename)
         
@@ -114,7 +113,7 @@ struct ScreenshotPopover: View {
             screenshotDownload.markCompleted(at: fileURL)
             
             // Add to download manager
-            downloadManager.addScreenshot(screenshotDownload)
+            fileManager.addScreenshot(screenshotDownload)
             
             // Dismiss the popover
             onDismiss()

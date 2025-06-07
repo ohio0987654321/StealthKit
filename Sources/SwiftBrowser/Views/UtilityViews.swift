@@ -46,8 +46,8 @@ struct FaviconView: View {
             faviconImage = image
         } else {
             // Try to load from cache
-            let domain = FaviconCache.domain(from: url)
-            faviconImage = FaviconCache.shared.getFavicon(for: domain)
+            let domain = BrowserStateManager.domain(from: url)
+            faviconImage = BrowserStateManager.shared.getFavicon(for: domain)
         }
     }
 }

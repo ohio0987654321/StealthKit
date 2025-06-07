@@ -99,7 +99,7 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
             
             // Extract and cache favicon
             extractFavicon(from: webView) { faviconData in
-                HistoryManager.shared.addHistoryItem(title: title, url: url, faviconData: faviconData)
+                BrowserStateManager.shared.addHistoryItem(title: title, url: url, faviconData: faviconData)
             }
         }
         
@@ -146,11 +146,11 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         // Check if this should be treated as a download
         if shouldDownload(response: response, for: url) {
             // Only start download if not already downloading
-            if !DownloadManager.shared.isAlreadyDownloading(url) {
+            if !BrowserFileManager.shared.isAlreadyDownloading(url) {
                 let suggestedFilename = response.suggestedFilename ?? url.lastPathComponent
                 let mimeType = response.mimeType
                 
-                DownloadManager.shared.startDownload(from: url, suggestedFilename: suggestedFilename, mimeType: mimeType)
+                BrowserFileManager.shared.startDownload(from: url, suggestedFilename: suggestedFilename, mimeType: mimeType)
             }
             decisionHandler(.cancel)
             return
@@ -216,10 +216,10 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
             return
         }
         
-        let domain = FaviconCache.domain(from: url)
+        let domain = BrowserStateManager.domain(from: url)
         
         // Check if we already have a favicon cached
-        if let cachedFavicon = FaviconCache.shared.getFaviconData(for: domain) {
+        if let cachedFavicon = BrowserStateManager.shared.getFaviconData(for: domain) {
             completion(cachedFavicon)
             return
         }
@@ -260,7 +260,7 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
             }
             
             // Store in cache
-            FaviconCache.shared.setFaviconData(data, for: domain)
+            BrowserStateManager.shared.setFaviconData(data, for: domain)
             
             // Return base64 string
             let base64String = data.base64EncodedString()

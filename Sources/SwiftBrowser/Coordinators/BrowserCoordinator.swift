@@ -6,7 +6,7 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     var childCoordinators: [CoordinatorProtocol] = []
     weak var parentCoordinator: CoordinatorProtocol?
     
-    private let tabService = TabService.shared
+    private let stateManager = BrowserStateManager.shared
     private var currentWebView: WKWebView?
     private var closedTabs: [Tab] = [] // Track closed tabs
     
@@ -15,23 +15,23 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     @Published var selectedSidebarItem: SidebarItem?
     
     func start() {
-        tabService.ensureWelcomeTab()
+        stateManager.ensureWelcomeTab()
         updateSelectedSidebarItem()
     }
     
     // MARK: - NavigationCoordinatorProtocol
     func navigateToTab(with url: URL?) {
-        if let currentTab = tabService.currentTab {
+        if let currentTab = stateManager.currentTab {
             if case .empty = currentTab.tabType {
                 // Convert empty tab to web tab
                 let newWebTab = Tab(url: url)
-                tabService.replaceCurrentTab(with: newWebTab)
+                stateManager.replaceCurrentTab(with: newWebTab)
                 selectedSidebarItem = nil
                 currentWebView = nil
             } else if case .settings = currentTab.tabType {
                 // Convert settings tab to web tab
                 let newWebTab = Tab(url: url)
-                tabService.replaceCurrentTab(with: newWebTab)
+                stateManager.replaceCurrentTab(with: newWebTab)
                 selectedSidebarItem = nil
                 currentWebView = nil
             } else if let url = url {
@@ -41,21 +41,21 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
             }
         } else if let url = url {
             // Create new tab
-            tabService.createTab(with: url)
+            stateManager.createTab(with: url)
             selectedSidebarItem = nil
             currentWebView = nil
         }
     }
     
     func navigateToSettings(_ settingsType: SettingsType) {
-        tabService.createSettingsTab(type: settingsType)
+        stateManager.createSettingsTab(type: settingsType)
         currentWebView = nil
         updateSelectedSidebarItem()
     }
     
     func closeTab(withId tabId: UUID) {
         // Find and save the tab before closing it (all tab types)
-        if let tabToClose = tabService.tabs.first(where: { $0.id == tabId }) {
+        if let tabToClose = stateManager.tabs.first(where: { $0.id == tabId }) {
             closedTabs.append(tabToClose)
             // Keep only the last 10 closed tabs
             if closedTabs.count > 10 {
@@ -63,11 +63,11 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
             }
         }
         
-        let wasCurrentTab = tabService.currentTab?.id == tabId
-        tabService.closeTab(withId: tabId)
+        let wasCurrentTab = stateManager.currentTab?.id == tabId
+        stateManager.closeTab(withId: tabId)
         
-        if tabService.tabs.isEmpty {
-            tabService.ensureWelcomeTab()
+        if stateManager.tabs.isEmpty {
+            stateManager.ensureWelcomeTab()
         }
         
         if wasCurrentTab {
@@ -79,7 +79,7 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     
     @discardableResult
     func createNewTab() -> UUID {
-        let newTab = tabService.createTab()
+        let newTab = stateManager.createTab()
         selectedSidebarItem = nil
         currentWebView = nil
         return newTab.id
@@ -87,14 +87,14 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     
     // MARK: - Tab Management
     func selectTab(withId tabId: UUID) {
-        tabService.selectTab(withId: tabId)
+        stateManager.selectTab(withId: tabId)
         // Don't reset currentWebView - let the new WebView update it
         updateSelectedSidebarItem()
     }
     
     func closeCurrentTab() {
         // Save current tab before closing (all tab types)
-        if let currentTab = tabService.currentTab {
+        if let currentTab = stateManager.currentTab {
             closedTabs.append(currentTab)
             // Keep only the last 10 closed tabs
             if closedTabs.count > 10 {
@@ -102,14 +102,14 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
             }
         }
         
-        tabService.closeCurrentTab()
+        stateManager.closeCurrentTab()
         
-        if tabService.tabs.isEmpty {
-            tabService.ensureWelcomeTab()
+        if stateManager.tabs.isEmpty {
+            stateManager.ensureWelcomeTab()
         }
         
         // Only reset currentWebView if no tabs remain
-        if tabService.tabs.isEmpty {
+        if stateManager.tabs.isEmpty {
             currentWebView = nil
         }
         updateSelectedSidebarItem()
@@ -117,7 +117,7 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     
     func reloadCurrentTab() {
         if let webView = currentWebView {
-            if tabService.currentTab?.isLoading == true {
+            if stateManager.currentTab?.isLoading == true {
                 webView.stopLoading()
             } else {
                 webView.reload()
@@ -136,11 +136,11 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
         let newTab: Tab
         switch lastClosedTab.tabType {
         case .empty:
-            newTab = tabService.createTab()
+            newTab = stateManager.createTab()
         case .web:
-            newTab = tabService.createTab(with: lastClosedTab.url)
+            newTab = stateManager.createTab(with: lastClosedTab.url)
         case .settings(let settingsType):
-            newTab = tabService.createSettingsTab(type: settingsType)
+            newTab = stateManager.createSettingsTab(type: settingsType)
         }
         
         // Restore the original title
@@ -151,8 +151,8 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     }
     
     func selectNextTab() {
-        let tabs = tabService.tabs
-        guard let currentTab = tabService.currentTab,
+        let tabs = stateManager.tabs
+        guard let currentTab = stateManager.currentTab,
               let currentIndex = tabs.firstIndex(where: { $0.id == currentTab.id }) else { return }
         
         let nextIndex = (currentIndex + 1) % tabs.count
@@ -160,8 +160,8 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     }
     
     func selectPreviousTab() {
-        let tabs = tabService.tabs
-        guard let currentTab = tabService.currentTab,
+        let tabs = stateManager.tabs
+        guard let currentTab = stateManager.currentTab,
               let currentIndex = tabs.firstIndex(where: { $0.id == currentTab.id }) else { return }
         
         let previousIndex = currentIndex > 0 ? currentIndex - 1 : tabs.count - 1
@@ -169,7 +169,7 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     }
     
     func selectTab(at index: Int) {
-        let tabs = tabService.tabs
+        let tabs = stateManager.tabs
         guard index >= 0 && index < tabs.count else { return }
         selectTab(withId: tabs[index].id)
     }
@@ -210,7 +210,7 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     private func updateSelectedSidebarItem() {
         // Sidebar only tracks settings now, not tabs
         // Clear selection when switching to web content
-        if let currentTab = tabService.currentTab {
+        if let currentTab = stateManager.currentTab {
             switch currentTab.tabType {
             case .settings(let settingsType):
                 // Keep settings selection when showing settings
@@ -239,6 +239,6 @@ class BrowserCoordinator: NavigationCoordinatorProtocol {
     
     // MARK: - URL Creation
     func createURL(from text: String) -> URL? {
-        return tabService.createURL(from: text)
+        return stateManager.createURL(from: text)
     }
 }

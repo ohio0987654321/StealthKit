@@ -6,7 +6,7 @@ import Combine
 @Observable
 class BrowserViewModel {
     let coordinator: BrowserCoordinator
-    private let tabService = TabService.shared
+    private let stateManager = BrowserStateManager.shared
     var cancellables = Set<AnyCancellable>()
     
     // UI State
@@ -19,15 +19,15 @@ class BrowserViewModel {
     
     // Computed Properties
     var currentTab: Tab? {
-        tabService.currentTab
+        stateManager.currentTab
     }
     
     var tabs: [Tab] {
-        tabService.tabs
+        stateManager.tabs
     }
     
     var isWebContentActive: Bool {
-        tabService.isWebContentActive(for: currentTab)
+        stateManager.isWebContentActive(for: currentTab)
     }
     
     init(coordinator: BrowserCoordinator) {
@@ -81,7 +81,7 @@ class BrowserViewModel {
     }
     
     func handleTabMove(from sourceIndex: Int, to destinationIndex: Int) {
-        tabService.moveTab(from: IndexSet([sourceIndex]), to: destinationIndex)
+        stateManager.moveTab(from: IndexSet([sourceIndex]), to: destinationIndex)
         updateUIFromCurrentTab()
     }
     
@@ -120,7 +120,7 @@ class BrowserViewModel {
     }
     
     func handleNavigationChange(_ updatedTab: Tab) {
-        tabService.updateTab(updatedTab)
+        stateManager.updateTab(updatedTab)
         updateUIFromCurrentTab()
     }
     
