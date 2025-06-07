@@ -289,7 +289,10 @@ class BrowserFileManager: NSObject {
         recentDownloads.removeAll { $0.id == download.id }
         recentDownloadTimers[download.id]?.invalidate()
         recentDownloadTimers.removeValue(forKey: download.id)
-        cleanupDownload(download)
+        // Only cleanup cancelled/failed downloads, keep completed ones tracked to prevent re-downloads
+        if download.state == .cancelled || download.state == .failed {
+            cleanupDownload(download)
+        }
     }
     
     private func getDownloadsDirectory() -> URL {
